@@ -12,3 +12,13 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model TestCards {
+  id        Int       @id @default(autoincrement())
+  cardNo    String    @unique
+  bank      String
+  cardType  String
+  isValid   Boolean
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+}
