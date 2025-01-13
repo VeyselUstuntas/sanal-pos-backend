@@ -1,19 +1,66 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export type Locale = 'TR' | 'EN';
+
 export class CardInput {
   @ApiProperty()
-  cardNo: string;
+  cardAlias: string;
 
   @ApiProperty()
-  bank: string;
+  cardNumber: string;
 
   @ApiProperty()
-  cardType: string;
+  expireYear: string;
 
   @ApiProperty()
-  isValid: boolean;
+  expireMonth: string;
+
+  @ApiProperty()
+  cardHolderName: string;
+
+  @ApiProperty()
+  cardUserKey: string;
+
+  @ApiProperty()
+  cardTokenKey: string;
+
+  @ApiProperty()
+  cardBankName: string;
 
   constructor(card: Partial<CardInput>) {
+    Object.assign(this, card);
+  }
+}
+
+export class CardCreateInput {
+  @ApiProperty()
+  locale: Locale = 'TR';
+
+  @ApiProperty()
+  conversationId: string = '123456789';
+
+  @ApiProperty()
+  cardUserKey: string;
+
+  @ApiProperty()
+  card: CardInput;
+
+  constructor(card: Partial<CardCreateInput>) {
+    Object.assign(this, card);
+  }
+}
+
+export class GetCardsInput {
+  @ApiProperty()
+  locale: Locale = 'TR';
+
+  @ApiProperty()
+  conversationId: string = '123456789';
+
+  @ApiProperty()
+  cardUserKey: string;
+
+  constructor(card: Partial<GetCardsInput>) {
     Object.assign(this, card);
   }
 }

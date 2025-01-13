@@ -22,4 +22,15 @@ export class PaymentController {
       success: true,
     });
   }
+
+  @Post('payment-create-stripe')
+  @ApiProperty({ description: 'Create Payment Stripe' })
+  async createPaymentStripe(): Promise<BaseResponse<void>> {
+    const paymentResult = await this.paymentService.createPaymentStripe();
+    return new BaseResponse<any>({
+      data: paymentResult,
+      message: ResponseMessages.SUCCESS,
+      success: true,
+    });
+  }
 }

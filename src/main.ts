@@ -5,16 +5,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-
   const config = new DocumentBuilder()
-  .setTitle('Sanal Pos')
-  .setDescription('Sanal Pos Api')
-  .setVersion('1.0')
-  .addTag('Pos')
-  .build()
+    .setTitle('Sanal Pos')
+    .setDescription('Sanal Pos Api')
+    .setVersion('1.0')
+    .addTag('Pos')
+    .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  
+
   SwaggerModule.setup('api', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
