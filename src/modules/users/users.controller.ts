@@ -1,9 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BaseResponse } from 'src/base/response/base.response';
 import { UsersService } from './users.service';
 import { UserViewModel } from './view-model/user.vm';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
+import { CreateUserAndCardViewModel } from '../cards/view-model/card-and-user-create.vm';
+import { CreateUserAndCardInput } from '../cards/input-model/card-and-user-create.im';
 
 @ApiTags('Users')
 @Controller('users')
@@ -26,6 +28,31 @@ export class UsersController {
     });
     return new BaseResponse<UserViewModel[]>({
       data: userList,
+      message: ResponseMessages.SUCCESS,
+      success: true,
+    });
+  }
+
+  @Post('user-and-card-generate')
+  @ApiOperation({ summary: "Create user and user's card" })
+  async createUserAndCard(
+    @Body() userAndCardData: CreateUserAndCardInput,
+  ): Promise<BaseResponse<CreateUserAndCardViewModel>> {
+    const result = await this.userService.createUserAndAddCard(userAndCardData);
+    return new BaseResponse<CreateUserAndCardViewModel>({
+      data: result,
+      message: ResponseMessages.SUCCESS,
+      success: true,
+    });
+  }
+
+  @Post('user-create-stripe')
+  @ApiOperation({ summary: 'user create stripe' })
+  async userCreate(): Promise<BaseResponse<any>> {
+    const email = 'veyselustuntas@gmail.com';
+    const result = await this.userService.createCustomerStripe(email);
+    return new BaseResponse<any>({
+      data: result,
       message: ResponseMessages.SUCCESS,
       success: true,
     });

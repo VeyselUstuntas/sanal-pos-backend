@@ -1,20 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/global-services/database/database.service';
 import { CardViewModel } from './view-model/card.vm';
 import { IyzicoService } from 'src/common/global-services/iyzico/iyzico.service';
-import { CreateUserAndCardInput } from './input-model/card-and-user-create.im';
 import { CreateUserAndCardViewModel } from './view-model/card-and-user-create.vm';
-import { UsersService } from '../users/users.service';
-import { UserSaveInput } from '../users/input-model/user.im';
-import { CardCreateInput, GetCardsInput } from './input-model/card.im';
+import {
+  CardCreateInput,
+  CardCreateStripeInput,
+  GetCardsInput,
+  GetCardsStripeInput,
+} from './input-model/card.im';
 import { CardDetailsViewModel } from './view-model/saved-cards.vm';
+import { StripeService } from 'src/common/global-services/stripe/stripe.service';
+import { BaseResponse } from 'src/base/response/base.response';
+import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 
 @Injectable()
 export class CardsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly iyzicoService: IyzicoService,
-    private readonly userService: UsersService,
+    private readonly stripeService: StripeService,
   ) {}
 
   async getAllCards(): Promise<CardViewModel[]> {
@@ -76,41 +81,6 @@ export class CardsService {
     }
   }
 
-  async createUserAndAddCard(
-    createUserAndCard: CreateUserAndCardInput,
-  ): Promise<CreateUserAndCardViewModel> {
-    try {
-      const result: CreateUserAndCardViewModel =
-        await this.iyzicoService.createUserAndAddCard(createUserAndCard);
-      console.log('bkaalim ', result);
-
-      await this.userService.saveUser(
-        new UserSaveInput({
-          email: result.email,
-          cardUserKey: result.cardUserKey,
-        }),
-      );
-
-      await this.saveCard(
-        new CardCreateInput({
-          card: {
-            cardAlias: result.cardAlias,
-            cardNumber: createUserAndCard.card.cardNumber,
-            expireMonth: createUserAndCard.card.expireMonth,
-            expireYear: createUserAndCard.card.expireYear,
-            cardHolderName: createUserAndCard.card.cardHolderName,
-            cardUserKey: result.cardUserKey,
-            cardBankName: result.cardBankName,
-            cardTokenKey: result.cardToken,
-          },
-        }),
-      );
-      return result;
-    } catch (error) {
-      console.log('create user adn card error ', error);
-    }
-  }
-
   async getUserCards(
     getUserCardsInput: GetCardsInput,
   ): Promise<CardDetailsViewModel> {
@@ -120,6 +90,35 @@ export class CardsService {
       return result;
     } catch (error) {
       console.log('get user cards error ', error);
+    }
+  }
+
+  // ----------------------- stripe
+
+  async getUserCardsStripe(data: GetCardsStripeInput): Promise<any[]> {
+    try {
+      const cards = await this.stripeService.getUserCards(data);
+      return cards;
+    } catch (error) {
+      console.log('Kartları getirme hatası:', error);
+      throw new Error('Kartlar getirilemedi.');
+    }
+  }
+
+  async saveCardStripe(cardInput: CardCreateStripeInput): Promise<any> {
+    try {
+      const paymentMethod = await this.stripeService.saveCard(cardInput);
+
+      return paymentMethod;
+    } catch (error) {
+      console.log('Kart kaydetme hatası:', error);
+      throw new BadRequestException(
+        new BaseResponse({
+          data: error,
+          message: ResponseMessages.BAD_REQUEST,
+          success: false,
+        }),
+      );
     }
   }
 }

@@ -64,3 +64,22 @@ export class GetCardsInput {
     Object.assign(this, card);
   }
 }
+
+//stripe
+export class CardCreateStripeInput {
+  @ApiProperty()
+  customerId: string;
+  @ApiProperty()
+  card: CardInput;
+
+  @ApiProperty()
+  cvc: string;
+}
+
+export class GetCardsStripeInput {
+  @ApiProperty({ example: 'cus_RaIsW49OIwSdf7' })
+  customer: string;
+
+  @ApiProperty({ example: 'card' })
+  type: string;
+}

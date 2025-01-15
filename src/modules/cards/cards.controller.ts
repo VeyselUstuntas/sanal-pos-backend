@@ -4,9 +4,13 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BaseResponse } from 'src/base/response/base.response';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { CardViewModel } from './view-model/card.vm';
-import { CreateUserAndCardInput } from './input-model/card-and-user-create.im';
 import { CreateUserAndCardViewModel } from './view-model/card-and-user-create.vm';
-import { CardCreateInput, GetCardsInput } from './input-model/card.im';
+import {
+  CardCreateInput,
+  CardCreateStripeInput,
+  GetCardsInput,
+  GetCardsStripeInput,
+} from './input-model/card.im';
 import { CardDetailsViewModel } from './view-model/saved-cards.vm';
 
 @ApiTags('Cards')
@@ -39,19 +43,6 @@ export class CardsController {
     });
   }
 
-  @Post('user-and-card-generate')
-  @ApiOperation({ summary: "Create user and user's card" })
-  async createUserAndCard(
-    @Body() userAndCardData: CreateUserAndCardInput,
-  ): Promise<BaseResponse<CreateUserAndCardViewModel>> {
-    const result = await this.cardService.createUserAndAddCard(userAndCardData);
-    return new BaseResponse<CreateUserAndCardViewModel>({
-      data: result,
-      message: ResponseMessages.SUCCESS,
-      success: true,
-    });
-  }
-
   @Post('get-user-cards')
   @ApiOperation({ summary: 'Fetch all cards of current user' })
   async getUserCards(
@@ -70,5 +61,21 @@ export class CardsController {
       message: ResponseMessages.SUCCESS,
       success: true,
     });
+  }
+
+  // -------------------
+
+  @Post('get-user-card-stripe')
+  @ApiOperation({ summary: 'get user cards stripe' })
+  async getUserCardsStripe(@Body() data: GetCardsStripeInput): Promise<any[]> {
+    const result = await this.cardService.getUserCardsStripe(data);
+    return result;
+  }
+
+  @Post('generate-user-card-stripe')
+  @ApiOperation({ summary: 'generate user card stripe' })
+  async saveCardStripe(@Body() data: CardCreateStripeInput): Promise<any[]> {
+    const result = await this.cardService.saveCardStripe(data);
+    return result;
   }
 }
