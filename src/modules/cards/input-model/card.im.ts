@@ -1,85 +1,72 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export type Locale = 'TR' | 'EN';
-
 export class CardInput {
-  @ApiProperty()
+  @ApiProperty({ example: 'user new card' })
   cardAlias: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '5528790000000008' })
   cardNumber: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '2030' })
   expireYear: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '12' })
   expireMonth: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'veysel' })
   cardHolderName: string;
-
-  @ApiProperty()
-  cardUserKey: string;
-
-  @ApiProperty()
-  cardTokenKey: string;
-
-  @ApiProperty()
-  cardBankName: string;
 
   constructor(card: Partial<CardInput>) {
     Object.assign(this, card);
   }
 }
 
-export class CardCreateInput {
-  @ApiProperty()
-  locale: Locale = 'TR';
-
-  @ApiProperty()
-  conversationId: string = '123456789';
-
-  @ApiProperty()
+export class CardGenerateInput {
+  @ApiProperty({
+    example: 'd801e6a2-8fe5-a5de-6ad5-a923ff225e4e',
+    required: true,
+    type: 'string',
+  })
   cardUserKey: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: true, type: 'string' })
+  email: string;
+
+  @ApiProperty({ examples: [CardInput], type: CardInput, required: true })
   card: CardInput;
 
-  constructor(card: Partial<CardCreateInput>) {
-    Object.assign(this, card);
+  constructor(cardData: Partial<CardGenerateInput>) {
+    Object.assign(this, cardData);
+  }
+}
+
+export class CardSaveInput {
+  @ApiProperty({ examples: [CardInput], type: CardInput, required: true })
+  card: CardInput;
+
+  @ApiProperty({
+    example: 'd801e6a2-8fe5-a5de-6ad5-a923ff225e4e',
+    required: true,
+    type: 'string',
+  })
+  cardUserKey: string;
+
+  @ApiProperty({ example: '2030' })
+  cardTokenKey: string;
+
+  @ApiProperty({ example: '2030' })
+  cardBankName: string;
+
+  constructor(partial: Partial<CardSaveInput>) {
+    Object.assign(this, partial);
   }
 }
 
 export class GetCardsInput {
-  @ApiProperty()
-  locale: Locale = 'TR';
-
-  @ApiProperty()
-  conversationId: string = '123456789';
-
   @ApiProperty()
   cardUserKey: string;
 
   constructor(card: Partial<GetCardsInput>) {
     Object.assign(this, card);
   }
-}
-
-//stripe
-export class CardCreateStripeInput {
-  @ApiProperty()
-  customerId: string;
-  @ApiProperty()
-  card: CardInput;
-
-  @ApiProperty()
-  cvc: string;
-}
-
-export class GetCardsStripeInput {
-  @ApiProperty({ example: 'cus_RaIsW49OIwSdf7' })
-  customer: string;
-
-  @ApiProperty({ example: 'card' })
-  type: string;
 }

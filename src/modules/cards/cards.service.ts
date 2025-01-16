@@ -1,28 +1,25 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/global-services/database/database.service';
 import { CardViewModel } from './view-model/card.vm';
-import { IyzicoService } from 'src/common/global-services/iyzico/iyzico.service';
 import { CreateUserAndCardViewModel } from './view-model/card-and-user-create.vm';
 import {
-  CardCreateInput,
-  CardCreateStripeInput,
+  CardGenerateInput,
+  CardSaveInput,
   GetCardsInput,
-  GetCardsStripeInput,
 } from './input-model/card.im';
 import { CardDetailsViewModel } from './view-model/saved-cards.vm';
-import { StripeService } from 'src/common/global-services/stripe/stripe.service';
-import { BaseResponse } from 'src/base/response/base.response';
-import { ResponseMessages } from 'src/common/enums/response-messages.enum';
+import { ProviderFactory } from 'src/providers/provider.factory';
 
 @Injectable()
 export class CardsService {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly iyzicoService: IyzicoService,
-    private readonly stripeService: StripeService,
+    private readonly providerFactory: ProviderFactory,
   ) {}
 
-  async getAllCards(): Promise<CardViewModel[]> {
+  // test kartlarını getirir
+
+  async getAllTestCards(): Promise<CardViewModel[]> {
     try {
       const cards: CardViewModel[] =
         await this.databaseService.testCards.findMany();
@@ -33,8 +30,11 @@ export class CardsService {
     }
   }
 
-  async saveCard(cardInput: CardCreateInput): Promise<any> {
+  // kartları veritabanına kaydeder
+
+  async saveCard(cardInput: CardSaveInput): Promise<any> {
     try {
+      console.log('kaydedileck kart body ', cardInput);
       await this.databaseService.cards.create({
         data: {
           cardAlias: cardInput.card.cardAlias,
@@ -42,9 +42,9 @@ export class CardsService {
           expireMonth: cardInput.card.expireMonth,
           expireYear: cardInput.card.expireYear,
           cardHolderName: cardInput.card.cardHolderName,
-          cardUserKey: cardInput.card.cardUserKey,
-          cardToken: cardInput.card.cardTokenKey,
-          cardBankName: cardInput.card.cardBankName,
+          cardUserKey: cardInput.cardUserKey,
+          cardToken: cardInput.cardTokenKey,
+          cardBankName: cardInput.cardBankName,
         },
       });
     } catch (error) {
@@ -53,25 +53,31 @@ export class CardsService {
     }
   }
 
+  // yeni kart oluşturur
+
   async generateCard(
-    cardInput: CardCreateInput,
+    providerName: string,
+    cardInput: CardGenerateInput,
   ): Promise<CreateUserAndCardViewModel> {
     try {
+      const provider = this.providerFactory.getCardProvider(providerName);
+      console.log('GETNERATE ', cardInput);
+      console.log('providers ', provider);
       const card: CreateUserAndCardViewModel =
-        await this.iyzicoService.generateCard(cardInput);
+        await provider.generateCard(cardInput);
 
       await this.saveCard(
-        new CardCreateInput({
+        new CardSaveInput({
           card: {
-            cardAlias: card.cardAlias,
+            cardAlias: cardInput.card.cardAlias,
+            cardHolderName: cardInput.card.cardHolderName,
             cardNumber: cardInput.card.cardNumber,
             expireMonth: cardInput.card.expireMonth,
             expireYear: cardInput.card.expireYear,
-            cardHolderName: cardInput.card.cardHolderName,
-            cardUserKey: card.cardUserKey,
-            cardBankName: card.cardBankName,
-            cardTokenKey: card.cardToken,
           },
+          cardBankName: card.cardBankName,
+          cardTokenKey: card.cardToken,
+          cardUserKey: cardInput.cardUserKey,
         }),
       );
       return card;
@@ -81,44 +87,19 @@ export class CardsService {
     }
   }
 
+  // geçerli kullanıcının kartlarını getirir
+
   async getUserCards(
+    providerName: string,
     getUserCardsInput: GetCardsInput,
   ): Promise<CardDetailsViewModel> {
     try {
+      const provider = this.providerFactory.getCardProvider(providerName);
       const result: CardDetailsViewModel =
-        await this.iyzicoService.getUserCards(getUserCardsInput);
+        await provider.getUserCards(getUserCardsInput);
       return result;
     } catch (error) {
       console.log('get user cards error ', error);
-    }
-  }
-
-  // ----------------------- stripe
-
-  async getUserCardsStripe(data: GetCardsStripeInput): Promise<any[]> {
-    try {
-      const cards = await this.stripeService.getUserCards(data);
-      return cards;
-    } catch (error) {
-      console.log('Kartları getirme hatası:', error);
-      throw new Error('Kartlar getirilemedi.');
-    }
-  }
-
-  async saveCardStripe(cardInput: CardCreateStripeInput): Promise<any> {
-    try {
-      const paymentMethod = await this.stripeService.saveCard(cardInput);
-
-      return paymentMethod;
-    } catch (error) {
-      console.log('Kart kaydetme hatası:', error);
-      throw new BadRequestException(
-        new BaseResponse({
-          data: error,
-          message: ResponseMessages.BAD_REQUEST,
-          success: false,
-        }),
-      );
     }
   }
 }

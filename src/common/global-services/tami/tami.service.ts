@@ -2,14 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { generateJWKSignature } from './securityHashV2';
 import { getGUID, headers, serviceEndpoint } from './common_lib';
 import axios from 'axios';
-import { PaymentInputTami } from 'src/modules/payment/input-model/create-payment.im';
+import { PaymentProvider } from 'src/providers/interfaces/payment-provider.interfaces';
+import { TamiPaymentRequest } from 'src/modules/payment/input-model/create-paymnet-tami.im';
+import { UnifiedPaymentRequest } from 'src/modules/payment/input-model/create-payment.im';
 
 @Injectable()
-export class TamiService {
-  async createPayment(body: PaymentInputTami) {
-    body.orderId = getGUID();
-    body.installmentCount = 1;
-    body.currency = 'TRY';
+export class TamiService implements PaymentProvider {
+  async createPayment(data: UnifiedPaymentRequest) {
+    const body: TamiPaymentRequest = new TamiPaymentRequest({
+      currency: data.currency,
+      installmentCount: data.installmentCount,
+      paymentGroup: data.paymentGroup,
+      card: {
+        cvv: data.card.cvv,
+        expireMonth: data.card.expireMonth,
+        expireYear: data.card.expireYear,
+        holderName: data.card.holderName,
+        number: data.card.number,
+      },
+      buyer: {
+        buyerId: data.buyer.buyerId,
+        ipAddress: data.buyer.ipAddress,
+        name: data.buyer.name,
+        surName: data.buyer.surName,
+        emailAddress: data.buyer.emailAddress,
+        phoneNumber: data.buyer.phoneNumber,
+      },
+      orderId: getGUID(),
+      amount: data.amount,
+    });
 
     // JWT Signature oluşturuluyor
     const securityHash = generateJWKSignature(JSON.stringify(body));

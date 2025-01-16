@@ -1,25 +1,27 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
-  CreatePaymentInput,
-  PaymentInputTami,
+  UnifiedPaymentRequest,
   Verify3DSInput,
 } from './input-model/create-payment.im';
-import { IyzicoService } from 'src/common/global-services/iyzico/iyzico.service';
 import { InitialThreeDSViewModel } from './view-model/threeDSecure.vm';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { BaseResponse } from 'src/base/response/base.response';
-import { TamiService } from 'src/common/global-services/tami/tami.service';
+import { ProviderFactory } from 'src/providers/provider.factory';
 
 @Injectable()
 export class PaymentService {
-  constructor(
-    private readonly iyzicoService: IyzicoService,
-    private readonly tamiService: TamiService,
-  ) {}
+  constructor(private readonly providerFactory: ProviderFactory) {}
 
-  async createPayment(createPayment: CreatePaymentInput): Promise<any> {
+  async createPayment(
+    providerName: string,
+    createPayment: UnifiedPaymentRequest,
+  ): Promise<any> {
     try {
-      const result = await this.iyzicoService.createPayment(createPayment);
+      const provider = this.providerFactory.getPaymentProvider(providerName);
+      console.log('provider: ', provider);
+
+      const result = await provider.createPayment(createPayment);
+      console.log('result: ', result);
 
       return new Promise((resolve, reject) => {
         if (result?.status === 'success') {
@@ -41,11 +43,13 @@ export class PaymentService {
   }
 
   async threedsInitialize(
-    initialThreeDSInput: CreatePaymentInput,
+    providerName: string,
+    initialThreeDSInput: UnifiedPaymentRequest,
   ): Promise<InitialThreeDSViewModel> {
     try {
-      const result =
-        await this.iyzicoService.threedsInitialize(initialThreeDSInput);
+      const provider = this.providerFactory.getPaymentProvider(providerName);
+      const result = await provider.threedsInitialize(initialThreeDSInput);
+
       if (result.status !== 'success') {
         throw new BadRequestException(
           new BaseResponse({
@@ -68,11 +72,14 @@ export class PaymentService {
     }
   }
 
-  async verifyThreeDSayment(paymentToken: Verify3DSInput): Promise<any> {
+  async verifyThreeDSayment(
+    providerName: string,
+    paymentToken: Verify3DSInput,
+  ): Promise<any> {
     try {
-      const result = this.iyzicoService.verifyThreeDSayment(
-        paymentToken.paymentId,
-      );
+      const provider = this.providerFactory.getPaymentProvider(providerName);
+
+      const result = provider.verifyThreeDSayment(paymentToken.paymentId);
       return result;
     } catch (error) {
       console.log('3DS doğrulanamadı ', error);
@@ -88,19 +95,19 @@ export class PaymentService {
 
   // Tami
 
-  async createPaymentTami(paymentInput: PaymentInputTami): Promise<any> {
-    try {
-      const result = this.tamiService.createPayment(paymentInput);
-      return result;
-    } catch (error) {
-      console.log('tami create payment error:', error);
-      throw new BadRequestException(
-        new BaseResponse({
-          data: null,
-          message: ResponseMessages.BAD_REQUEST,
-          success: false,
-        }),
-      );
-    }
-  }
+  // async createPaymentTami(paymentInput: PaymentInputTami): Promise<any> {
+  //   try {
+  //     const result = this.tamiService.createPayment(paymentInput);
+  //     return result;
+  //   } catch (error) {
+  //     console.log('tami create payment error:', error);
+  //     throw new BadRequestException(
+  //       new BaseResponse({
+  //         data: null,
+  //         message: ResponseMessages.BAD_REQUEST,
+  //         success: false,
+  //       }),
+  //     );
+  //   }
+  // }
 }

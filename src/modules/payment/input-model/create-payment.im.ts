@@ -1,128 +1,215 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
-export class BuyerInput {
-  @ApiProperty()
-  id: string;
-  @ApiProperty()
+class Card {
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Cardholder name',
+    required: true,
+  })
+  holderName: string;
+
+  @ApiProperty({
+    example: '4111111111111111',
+    description: 'Card number',
+    required: true,
+  })
+  number: string;
+
+  @ApiProperty({
+    example: 12,
+    description: 'Card expiry month',
+    required: true,
+  })
+  expireMonth: number;
+
+  @ApiProperty({
+    example: 2025,
+    description: 'Card expiry year',
+    required: true,
+  })
+  expireYear: number;
+
+  @ApiProperty({ example: '123', description: 'Card CVV code', required: true })
+  cvv: string;
+}
+
+class Buyer {
+  @ApiProperty({
+    example: '192.168.1.1',
+    description: 'IP address of the buyer',
+    required: true,
+  })
+  ipAddress: string;
+
+  @ApiProperty({
+    example: 'buyer123',
+    description: 'Unique ID of the buyer',
+    required: true,
+  })
+  buyerId: string;
+
+  @ApiProperty({
+    example: 'John',
+    description: 'First name of the buyer',
+    required: true,
+  })
   name: string;
-  @ApiProperty()
-  surname: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 'Doe',
+    description: 'Last name of the buyer',
+    required: true,
+  })
+  surName: string;
+
+  @ApiProperty({
+    example: 'john.doe@example.com',
+    description: 'Email address of the buyer',
+    required: true,
+  })
+  emailAddress: string;
+
+  @ApiProperty({
+    example: '5551234567',
+    description: 'Phone number of the buyer',
+    required: true,
+  })
+  phoneNumber: string;
+
+  @ApiProperty({
+    example: '12345678901',
+    description: 'Identity number of the buyer',
+    required: true,
+  })
   identityNumber: string;
-  @ApiProperty()
-  email: string;
-  @ApiProperty()
-  gsmNumber: string;
-  @ApiProperty()
-  registrationDate: string;
-  @ApiProperty()
-  lastLoginDate: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: '123 Main Street',
+    description: 'Registration address of the buyer',
+    required: true,
+  })
   registrationAddress: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 'New York',
+    description: 'City of the buyer',
+    required: true,
+  })
   city: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 'USA',
+    description: 'Country of the buyer',
+    required: true,
+  })
   country: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: '10001',
+    description: 'ZIP code of the buyer',
+    required: true,
+  })
   zipCode: string;
-  @ApiProperty()
-  ip: string;
 }
 
-export class AddressInput {
-  @ApiProperty()
-  address: string;
-  @ApiProperty()
-  zipCode: string;
-  @ApiProperty()
-  contactName: string;
-  @ApiProperty()
-  city: string;
-  @ApiProperty()
-  country: string;
-}
+export type BasketItemType = 'PHYSICAL' | 'VIRTUAL';
 
-export class BasketItemInput {
-  @ApiProperty()
+class BasketItem {
+  @ApiProperty({
+    example: 'item123',
+    description: 'Unique ID of the basket item',
+    required: true,
+  })
   id: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 99.99,
+    description: 'Price of the basket item',
+    required: true,
+  })
+  price: number;
+
+  @ApiProperty({
+    example: 'T-shirt',
+    description: 'Name of the basket item',
+    required: true,
+  })
   name: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 'Clothing',
+    description: 'Category of the basket item',
+    required: true,
+  })
   category1: string;
-  @ApiProperty()
-  category2?: string;
-  @ApiProperty()
+
+  @ApiProperty({
+    example: 'physical',
+    description: 'Type of the basket item',
+    required: true,
+  })
   itemType: BasketItemType;
-  @ApiProperty()
-  price: number | string;
-  @ApiProperty()
-  subMerchantPrice?: number | string;
-  @ApiProperty()
-  subMerchantKey?: string;
 }
 
-export class PaymentCardInput {
-  @ApiProperty()
-  cardHolderName: string;
-  @ApiProperty()
-  cardNumber: string;
-  @ApiProperty()
-  expireMonth: string;
-  @ApiProperty()
-  expireYear: string;
-  @ApiProperty()
-  cvc?: string;
-  @ApiProperty()
-  registerCard?: number;
-  @ApiProperty()
-  registerConsumerCard?: boolean;
-  @ApiProperty()
-  cardAlias: string;
+class ShippingAddress {
+  @ApiProperty({
+    example: '123 Shipping Street',
+    description: 'Shipping address',
+    required: true,
+  })
+  address: string;
+
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Contact name for the shipping address',
+    required: true,
+  })
+  contactName: string;
+
+  @ApiProperty({
+    example: 'New York',
+    description: 'City for the shipping address',
+    required: true,
+  })
+  city: string;
+
+  @ApiProperty({
+    example: 'USA',
+    description: 'Country for the shipping address',
+    required: true,
+  })
+  country: string;
 }
 
-export class CreatePaymentInput {
-  @ApiProperty()
-  locale: Locale;
-  @ApiProperty()
-  conversationId: string;
-  @ApiProperty()
-  price: string;
-  @ApiProperty()
-  paidPrice: string;
-  @ApiProperty()
-  installments: number;
-  @ApiProperty()
-  paymentChannel: PaymentChannel;
-  @ApiProperty()
-  basketId: string;
-  @ApiProperty()
-  paymentGroup: PaymentGroup;
-  @ApiProperty()
-  paymentCard: PaymentCardInput;
-  @ApiProperty()
-  buyer: BuyerInput;
-  @ApiProperty()
-  shippingAddress: AddressInput;
-  @ApiProperty()
-  billingAddress: AddressInput;
-  @ApiProperty()
-  basketItems: BasketItemInput[];
-  @ApiProperty()
-  currency: Currency;
-  @ApiProperty()
-  callbackUrl: string;
+class BillingAddress {
+  @ApiProperty({
+    example: '123 Billing Street',
+    description: 'Billing address',
+    required: true,
+  })
+  address: string;
 
-  constructor(partial: Partial<CreatePaymentInput>) {
-    Object.assign(this, partial);
-  }
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Contact name for the billing address',
+    required: true,
+  })
+  contactName: string;
+
+  @ApiProperty({
+    example: 'New York',
+    description: 'City for the billing address',
+    required: true,
+  })
+  city: string;
+
+  @ApiProperty({
+    example: 'USA',
+    description: 'Country for the billing address',
+    required: true,
+  })
+  country: string;
 }
-
-export class Verify3DSInput {
-  @ApiProperty()
-  paymentId: string;
-}
-
-export type Locale = 'TR' | 'EN';
 
 export type Currency =
   | 'TRY'
@@ -134,127 +221,91 @@ export type Currency =
   | 'RUB'
   | 'CHF';
 
-export type PaymentChannel =
-  | 'MOBILE'
-  | 'WEB'
-  | 'MOBILE_WEB'
-  | 'MOBILE_IOS'
-  | 'MOBILE_ANDROID'
-  | 'MOBILE_WINDOWS'
-  | 'MOBILE_TABLET'
-  | 'MOBILE_PHONE';
-
-export type PaymentGroup = 'PRODUCT' | 'LISTING' | 'SUBSCRIPTION';
-
-export type BasketItemType = 'PHYSICAL' | 'VIRTUAL';
-
-// stripe
-
-export class Buyer {
-  @ApiProperty({ example: 'BUYER123', type: 'string' })
-  id: string;
-
-  @ApiProperty({ example: 'veysel', type: 'string' })
-  name: string;
-}
-export class CreatePaymentStripeInput {
-  @ApiProperty({ description: 'Ödemenin fiyatı', example: 100, type: 'number' })
-  price: number;
+export class UnifiedPaymentRequest {
+  @ApiHideProperty()
+  orderId: string;
 
   @ApiProperty({
-    description: 'Ödemenin yapılacağı para birimi',
-    example: 'TRY',
-    type: 'string',
+    example: '20.0',
+    description: 'Total price of the order',
+    required: true,
   })
-  currency: string;
+  price: string;
 
   @ApiProperty({
-    description: 'Sepet ID',
-    example: 'BASKET12345',
-    type: 'string',
+    example: '20.0',
+    description: 'Paid price of the order',
+    required: true,
   })
-  basketId: string;
+  paidPrice: string;
 
-  @ApiProperty({ description: 'Alıcı bilgileri' })
-  buyer: Buyer;
-}
-
-// tami
-
-class CardInputTami {
-  @ApiProperty({ description: 'Cardholders name', example: 'veysel' })
-  holderName: string;
-
-  @ApiProperty({ description: 'Card CVV code', example: '916' })
-  cvv: string;
-
-  @ApiProperty({ description: 'Card expiration month', example: 1 })
-  expireMonth: number;
-
-  @ApiProperty({ description: 'Card expiration year', example: 2027 })
-  expireYear: number;
-
-  @ApiProperty({ description: 'Card number', example: '5549603469426017' })
-  number: string;
-
-  constructor(partial: Partial<CardInputTami>) {
-    Object.assign(this, partial);
-  }
-}
-
-class BuyerInputTami {
-  @ApiProperty({ description: 'Buyer IP address', example: '127.0.0.1' })
-  ipAddress: string;
-
-  @ApiProperty({ description: 'Buyer ID', example: '1234' })
-  buyerId: string;
-
-  @ApiProperty({ description: 'Buyer name', example: 'Oğuzhan' })
-  name: string;
-
-  @ApiProperty({ description: 'Buyer surname', example: 'Okur' })
-  surName: string;
-
-  @ApiProperty({
-    description: 'Buyer email address',
-    example: 'destek@garantibbva.com.tr',
-  })
-  emailAddress: string;
-
-  @ApiProperty({ description: 'Buyer phone number', example: '07325555555' })
-  phoneNumber: string;
-
-  constructor(partial: Partial<BuyerInputTami>) {
-    Object.assign(this, partial);
-  }
-}
-
-export class PaymentInputTami {
-  @ApiProperty({ description: 'Payment amount', example: 15 })
+  @ApiProperty({ example: 20.0, description: 'amount', required: true })
   amount: number;
 
-  @ApiHideProperty()
-  orderId?: string;
-
-  @ApiProperty({ description: 'Currency', type: 'string', example: 'TRY' })
-  currency: string;
-
-  @ApiProperty({ description: 'Installment Count', type: 'number', example: 1 })
+  @ApiProperty({
+    example: 1,
+    description: 'Installment count for the payment',
+    required: true,
+  })
   installmentCount: number;
 
-  @ApiProperty({ description: 'Card details', type: CardInputTami })
-  card: CardInputTami;
+  @ApiProperty({
+    example: 'USD',
+    description: 'Currency of the payment',
+    required: true,
+  })
+  currency: Currency;
 
-  @ApiProperty({ description: 'Buyer details', type: BuyerInputTami })
-  buyer: BuyerInputTami;
-
-  @ApiProperty({ description: 'Payment group', example: 'PRODUCT' })
-  paymentGroup: string;
-
-  @ApiHideProperty()
+  @ApiProperty({
+    example: 'hash123',
+    description: 'Security hash for the payment',
+    required: true,
+  })
   securityHash?: string;
 
-  constructor(partial: Partial<PaymentInputTami>) {
+  @ApiProperty({
+    type: Card,
+    description: 'Card details for the payment',
+    required: true,
+  })
+  card: Card;
+
+  @ApiProperty({ type: Buyer, description: 'Buyer details', required: true })
+  buyer: Buyer;
+
+  @ApiProperty({
+    type: [BasketItem],
+    description: 'List of basket items',
+    required: true,
+  })
+  basketItems: BasketItem[];
+
+  @ApiProperty({
+    type: ShippingAddress,
+    description: 'Shipping address details',
+    required: true,
+  })
+  shippingAddress: ShippingAddress;
+
+  @ApiProperty({
+    type: BillingAddress,
+    description: 'Billing address details',
+    required: true,
+  })
+  billingAddress: BillingAddress;
+
+  @ApiProperty({ example: 'PRODUCT', description: 'Tami payment group' })
+  paymentGroup: string;
+
+  @ApiProperty({ example: 'https://www.merchant.com/callback' })
+  callbackUrl: string;
+
+  constructor(partial: Partial<UnifiedPaymentRequest>) {
     Object.assign(this, partial);
   }
+}
+
+export class Verify3DSInput {
+  @ApiProperty()
+  paymentId: string;
 }

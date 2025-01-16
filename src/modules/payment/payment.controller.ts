@@ -1,9 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiProperty, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Post, Query } from '@nestjs/common';
+import { ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import {
-  CreatePaymentInput,
-  PaymentInputTami,
+  UnifiedPaymentRequest,
   Verify3DSInput,
 } from './input-model/create-payment.im';
 import { BaseResponse } from 'src/base/response/base.response';
@@ -17,10 +16,21 @@ export class PaymentController {
 
   @Post('payment-create')
   @ApiProperty({ description: 'Create Payment' })
+  @ApiQuery({
+    name: 'providerName',
+    description: 'Provider name',
+    required: true,
+    enum: ['iyzico', 'tami'],
+  })
   async createPayment(
-    @Body() paymentInput: CreatePaymentInput,
+    @Query('providerName') providerName: string,
+    @Body() paymentInput: UnifiedPaymentRequest,
   ): Promise<BaseResponse<void>> {
-    const paymentResult = await this.paymentService.createPayment(paymentInput);
+    console.log('alinana parameter quertsi ', providerName);
+    const paymentResult = await this.paymentService.createPayment(
+      providerName,
+      paymentInput,
+    );
     return new BaseResponse<any>({
       data: paymentResult,
       message: ResponseMessages.SUCCESS,
@@ -30,11 +40,21 @@ export class PaymentController {
 
   @Post('threeds-initial-payment')
   @ApiProperty({ description: 'threeds Initialize' })
+  @ApiQuery({
+    name: 'providerName',
+    description: 'Provider name',
+    required: true,
+    enum: ['iyzico'],
+  })
   async threedsInitialize(
-    @Body() initialThreedsInput: CreatePaymentInput,
+    @Query('providerName') providerName: string,
+    @Body() initialThreedsInput: UnifiedPaymentRequest,
   ): Promise<BaseResponse<InitialThreeDSViewModel>> {
     const result: InitialThreeDSViewModel =
-      await this.paymentService.threedsInitialize(initialThreedsInput);
+      await this.paymentService.threedsInitialize(
+        providerName,
+        initialThreedsInput,
+      );
     return new BaseResponse<InitialThreeDSViewModel>({
       data: result,
       message: ResponseMessages.SUCCESS,
@@ -43,26 +63,23 @@ export class PaymentController {
   }
 
   @Post('threeds-verify-payment')
+  @ApiQuery({
+    name: 'providerName',
+    description: 'Provider name',
+    required: true,
+    enum: ['iyzico'],
+  })
   @ApiProperty({ description: 'verify 3D Secure payment' })
   async verifyThreeDSayment(
+    @Query('providerName') providerName: string,
     @Body() token: Verify3DSInput,
   ): Promise<BaseResponse<any>> {
-    const result: any = await this.paymentService.verifyThreeDSayment(token);
+    const result: any = await this.paymentService.verifyThreeDSayment(
+      providerName,
+      token,
+    );
     return new BaseResponse<any>({
       data: result,
-      message: ResponseMessages.SUCCESS,
-      success: true,
-    });
-  }
-
-  @Post('payment-create-tami')
-  @ApiProperty({ description: 'Create Payment Tami' })
-  async createPaymentTami(
-    @Body() payment: PaymentInputTami,
-  ): Promise<BaseResponse<void>> {
-    const paymentResult = await this.paymentService.createPaymentTami(payment);
-    return new BaseResponse<any>({
-      data: paymentResult,
       message: ResponseMessages.SUCCESS,
       success: true,
     });
