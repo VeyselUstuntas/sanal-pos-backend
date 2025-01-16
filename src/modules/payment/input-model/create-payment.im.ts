@@ -185,16 +185,16 @@ class CardInputTami {
   @ApiProperty({ description: 'Cardholders name', example: 'veysel' })
   holderName: string;
 
-  @ApiProperty({ description: 'Card CVV code', example: '423' })
+  @ApiProperty({ description: 'Card CVV code', example: '916' })
   cvv: string;
 
-  @ApiProperty({ description: 'Card expiration month', example: 4 })
+  @ApiProperty({ description: 'Card expiration month', example: 1 })
   expireMonth: number;
 
   @ApiProperty({ description: 'Card expiration year', example: 2027 })
   expireYear: number;
 
-  @ApiProperty({ description: 'Card number', example: '5406697543211173' })
+  @ApiProperty({ description: 'Card number', example: '5549603469426017' })
   number: string;
 
   constructor(partial: Partial<CardInputTami>) {
@@ -203,25 +203,25 @@ class CardInputTami {
 }
 
 class BuyerInputTami {
-  @ApiProperty({ description: 'Buyer IP address', example: '192.168.1.70' })
+  @ApiProperty({ description: 'Buyer IP address', example: '127.0.0.1' })
   ipAddress: string;
 
-  @ApiProperty({ description: 'Buyer ID', example: '678654' })
+  @ApiProperty({ description: 'Buyer ID', example: '1234' })
   buyerId: string;
 
-  @ApiProperty({ description: 'Buyer name', example: 'Adı' })
+  @ApiProperty({ description: 'Buyer name', example: 'Oğuzhan' })
   name: string;
 
-  @ApiProperty({ description: 'Buyer surname', example: 'Soyadı' })
+  @ApiProperty({ description: 'Buyer surname', example: 'Okur' })
   surName: string;
 
   @ApiProperty({
     description: 'Buyer email address',
-    example: 'email@email.com',
+    example: 'destek@garantibbva.com.tr',
   })
   emailAddress: string;
 
-  @ApiProperty({ description: 'Buyer phone number', example: '05364609963' })
+  @ApiProperty({ description: 'Buyer phone number', example: '07325555555' })
   phoneNumber: string;
 
   constructor(partial: Partial<BuyerInputTami>) {
@@ -236,10 +236,10 @@ export class PaymentInputTami {
   @ApiHideProperty()
   orderId?: string;
 
-  @ApiHideProperty()
+  @ApiProperty({ description: 'Currency', type: 'string', example: 'TRY' })
   currency: string;
 
-  @ApiHideProperty()
+  @ApiProperty({ description: 'Installment Count', type: 'number', example: 1 })
   installmentCount: number;
 
   @ApiProperty({ description: 'Card details', type: CardInputTami })

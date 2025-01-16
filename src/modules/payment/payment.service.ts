@@ -1,13 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   CreatePaymentInput,
-  CreatePaymentStripeInput,
   PaymentInputTami,
   Verify3DSInput,
 } from './input-model/create-payment.im';
 import { IyzicoService } from 'src/common/global-services/iyzico/iyzico.service';
-import { StripeService } from 'src/common/global-services/stripe/stripe.service';
-import Stripe from 'stripe';
 import { InitialThreeDSViewModel } from './view-model/threeDSecure.vm';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { BaseResponse } from 'src/base/response/base.response';
@@ -17,7 +14,6 @@ import { TamiService } from 'src/common/global-services/tami/tami.service';
 export class PaymentService {
   constructor(
     private readonly iyzicoService: IyzicoService,
-    private readonly stripeService: StripeService,
     private readonly tamiService: TamiService,
   ) {}
 
@@ -87,25 +83,6 @@ export class PaymentService {
           success: false,
         }),
       );
-    }
-  }
-
-  // STRIPE
-
-  async createPaymentStripe(
-    paymentInput: CreatePaymentStripeInput,
-  ): Promise<Stripe.PaymentIntent | string> {
-    try {
-      const result = await this.stripeService.createPayment(paymentInput);
-
-      if (typeof result === 'string') {
-        throw new Error(result);
-      }
-
-      return result;
-    } catch (error) {
-      console.log('create payment error:', error);
-      throw new Error('Ödeme işlemi sırasında bir hata oluştu.');
     }
   }
 

@@ -16,6 +16,7 @@ export class TamiService {
     body.securityHash = securityHash;
 
     try {
+      console.log('reqBody ', body);
       const response = await axios.post(
         `${serviceEndpoint}/payment/auth`,
         body,

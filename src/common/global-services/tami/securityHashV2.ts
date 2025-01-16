@@ -5,7 +5,7 @@ import {
   fixedKValue,
   fixedKidValue,
 } from './common_lib';
-import crypto from 'crypto';
+import { createHash, createHmac } from 'crypto';
 
 export function generateJWKSignature(input: string) {
   const jwkResource = getJWKResource(
@@ -36,13 +36,13 @@ export function generateJWKSignature(input: string) {
 
   const result = `${headerBase64}.${payloadBase64}.${signatureBase64}`;
 
-  // console.log(result);
+  console.log(result);
 
   return result;
 }
 
 export function generateKidValue(secretKey: string, fixedKidValue: string) {
-  const hash = crypto.createHash('sha512');
+  const hash = createHash('sha512');
   hash.update(secretKey + fixedKidValue, 'utf8');
   return hash.digest('base64');
 }
@@ -53,7 +53,7 @@ export function generateKValue(
   secretKey: string,
   fixedKValue: string,
 ) {
-  const hash = crypto.createHash('sha512');
+  const hash = createHash('sha512');
   hash.update(
     secretKey + fixedKValue + merchantNumber + terminalNumber,
     'utf8',
@@ -75,7 +75,7 @@ export function getJWKResource(
 }
 
 export function computeHmacSha512(key: Buffer, data: Buffer) {
-  return crypto.createHmac('sha512', data).update(data).digest();
+  return createHmac('sha512', key).update(data).digest();
 }
 
 export function base64UrlEncode(buffer: Buffer) {

@@ -3,7 +3,7 @@ import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import {
   CreatePaymentInput,
-  CreatePaymentStripeInput,
+  PaymentInputTami,
   Verify3DSInput,
 } from './input-model/create-payment.im';
 import { BaseResponse } from 'src/base/response/base.response';
@@ -55,13 +55,12 @@ export class PaymentController {
     });
   }
 
-  @Post('payment-create-stripe')
-  @ApiProperty({ description: 'Create Payment Stripe' })
-  async createPaymentStripe(
-    @Body() payment: CreatePaymentStripeInput,
+  @Post('payment-create-tami')
+  @ApiProperty({ description: 'Create Payment Tami' })
+  async createPaymentTami(
+    @Body() payment: PaymentInputTami,
   ): Promise<BaseResponse<void>> {
-    const paymentResult =
-      await this.paymentService.createPaymentStripe(payment);
+    const paymentResult = await this.paymentService.createPaymentTami(payment);
     return new BaseResponse<any>({
       data: paymentResult,
       message: ResponseMessages.SUCCESS,
