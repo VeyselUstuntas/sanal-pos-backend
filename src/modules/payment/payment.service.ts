@@ -12,11 +12,15 @@ import { ProviderFactory } from 'src/providers/provider.factory';
 export class PaymentService {
   constructor(private readonly providerFactory: ProviderFactory) {}
 
+  // ödeme olşturma
+
   async createPayment(
     providerName: string,
     createPayment: UnifiedPaymentRequest,
   ): Promise<any> {
     try {
+      // provider belirlenir
+
       const provider = this.providerFactory.getPaymentProvider(providerName);
       console.log('provider: ', provider);
 
@@ -41,6 +45,8 @@ export class PaymentService {
       );
     }
   }
+
+  // 3ds tetiklenir
 
   async threedsInitialize(
     providerName: string,
@@ -72,6 +78,8 @@ export class PaymentService {
     }
   }
 
+  // 3ds doğrulanır
+
   async verifyThreeDSayment(
     providerName: string,
     paymentToken: Verify3DSInput,
@@ -92,22 +100,4 @@ export class PaymentService {
       );
     }
   }
-
-  // Tami
-
-  // async createPaymentTami(paymentInput: PaymentInputTami): Promise<any> {
-  //   try {
-  //     const result = this.tamiService.createPayment(paymentInput);
-  //     return result;
-  //   } catch (error) {
-  //     console.log('tami create payment error:', error);
-  //     throw new BadRequestException(
-  //       new BaseResponse({
-  //         data: null,
-  //         message: ResponseMessages.BAD_REQUEST,
-  //         success: false,
-  //       }),
-  //     );
-  //   }
-  // }
 }

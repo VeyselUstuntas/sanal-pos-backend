@@ -53,7 +53,7 @@ export class CardsService {
     }
   }
 
-  // yeni kart oluşturur
+  // yeni kart oluşturur => iyzico
 
   async generateCard(
     providerName: string,
@@ -87,7 +87,7 @@ export class CardsService {
     }
   }
 
-  // geçerli kullanıcının kartlarını getirir
+  // geçerli kullanıcının kartlarını getirir => iyzico
 
   async getUserCards(
     providerName: string,

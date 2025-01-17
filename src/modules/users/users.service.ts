@@ -16,6 +16,8 @@ export class UsersService {
     private readonly providerFactory: ProviderFactory,
   ) {}
 
+  // db ye kaydeder user'ı
+
   async saveUser(userData: UserSaveInput) {
     try {
       await this.databaseService.user.create({
@@ -29,6 +31,8 @@ export class UsersService {
     }
   }
 
+  // db de ki butun user'ları getirir aynı zamanda bu user'lar iyzicodaki userlar
+
   async getAllUser(): Promise<UserViewModel[]> {
     try {
       const result: UserViewModel[] =
@@ -38,6 +42,8 @@ export class UsersService {
       console.log('user list not loaded ', error);
     }
   }
+
+  // user ve onunla ilişkili card oluşturur iyzico da
 
   async createUserAndAddCard(
     providerName: string,

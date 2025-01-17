@@ -26,7 +26,7 @@ export class IyzicoService
     });
   }
 
-  // PAYMENT
+  // PAYMENT ISLEMLERI
 
   createPayment(createPayment: UnifiedPaymentRequest): Promise<any> {
     try {
@@ -168,7 +168,8 @@ export class IyzicoService
       );
     }
   }
-  // CARD
+
+  // CARD ISLEMLERI
 
   async generateCard(cardData: CardGenerateInput): Promise<any> {
     try {
@@ -238,7 +239,7 @@ export class IyzicoService
     }
   }
 
-  // USER
+  // USER ISLEMLERI
 
   async createUserAndAddCard(
     createUserAndCard: CreateUserAndCardInput,
