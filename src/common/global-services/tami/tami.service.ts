@@ -3,12 +3,12 @@ import { generateJWKSignature } from './securityHashV2';
 import { getGUID, headers, serviceEndpoint } from './common_lib';
 import axios from 'axios';
 import { PaymentProvider } from 'src/providers/interfaces/payment-provider.interfaces';
-import { TamiPaymentRequest } from 'src/modules/payment/input-model/create-paymnet-tami.im';
-import { UnifiedPaymentRequest } from 'src/modules/payment/input-model/create-payment.im';
+import { TamiPaymentRequest } from 'src/common/models/payment/input-model/create-paymnet-tami.im';
+import { UnifiedPaymentRequest } from 'src/common/models/payment/input-model/create-payment.im';
 
 @Injectable()
 export class TamiService implements PaymentProvider {
-  async createPayment(data: UnifiedPaymentRequest) {
+  async createPayment(data: UnifiedPaymentRequest): Promise<any> {
     const body: TamiPaymentRequest = new TamiPaymentRequest({
       currency: data.currency,
       installmentCount: data.installmentCount,
@@ -37,13 +37,13 @@ export class TamiService implements PaymentProvider {
     body.securityHash = securityHash;
 
     try {
-      console.log('reqBody ', body);
       const response = await axios.post(
         `${serviceEndpoint}/payment/auth`,
         body,
         { headers },
       );
       console.log('Response Data:', response.data);
+      return response;
     } catch (error) {
       if (error.response) {
         console.error('Hata: ', error.response.status);

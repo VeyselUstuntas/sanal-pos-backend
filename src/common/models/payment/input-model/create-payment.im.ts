@@ -6,31 +6,45 @@ class Card {
     description: 'Cardholder name',
     required: true,
   })
-  holderName: string;
+  holderName?: string;
 
   @ApiProperty({
     example: '4111111111111111',
     description: 'Card number',
     required: true,
   })
-  number: string;
+  number?: string;
 
   @ApiProperty({
     example: 12,
     description: 'Card expiry month',
     required: true,
   })
-  expireMonth: number;
+  expireMonth?: number;
 
   @ApiProperty({
     example: 2025,
     description: 'Card expiry year',
     required: true,
   })
-  expireYear: number;
+  expireYear?: number;
 
   @ApiProperty({ example: '123', description: 'Card CVV code', required: true })
-  cvv: string;
+  cvv?: string;
+
+  @ApiProperty({
+    example: '982a49a6-0815-6b7a-9a1e-cb390e919001',
+    description: 'Card User Key',
+    required: true,
+  })
+  cardUserKey?: string;
+
+  @ApiProperty({
+    example: 'c6bc405d-f2d9-ec2f-8e49-5e2cf49fea94',
+    description: 'Card Token',
+    required: true,
+  })
+  cardToken?: string;
 }
 
 class Buyer {
@@ -308,4 +322,7 @@ export class UnifiedPaymentRequest {
 export class Verify3DSInput {
   @ApiProperty()
   paymentId: string;
+
+  @ApiProperty()
+  userId: string;
 }

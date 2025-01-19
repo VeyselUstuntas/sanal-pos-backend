@@ -13,6 +13,9 @@ export class CardInput {
   @ApiProperty({ example: '12' })
   expireMonth: string;
 
+  @ApiProperty({ example: '123', maxLength: 3, minLength: 3 })
+  cvv: string;
+
   @ApiProperty({ example: 'veysel' })
   cardHolderName: string;
 
@@ -41,21 +44,20 @@ export class CardGenerateInput {
 }
 
 export class CardSaveInput {
-  @ApiProperty({ examples: [CardInput], type: CardInput, required: true })
-  card: CardInput;
+  @ApiProperty()
+  cardAlias: string;
 
-  @ApiProperty({
-    example: 'd801e6a2-8fe5-a5de-6ad5-a923ff225e4e',
-    required: true,
-    type: 'string',
-  })
+  @ApiProperty()
+  cardToken: string;
+
+  @ApiProperty()
+  lastFourDigits: string;
+
+  @ApiProperty()
+  bankName: string;
+
+  @ApiProperty()
   cardUserKey: string;
-
-  @ApiProperty({ example: '2030' })
-  cardTokenKey: string;
-
-  @ApiProperty({ example: '2030' })
-  cardBankName: string;
 
   constructor(partial: Partial<CardSaveInput>) {
     Object.assign(this, partial);

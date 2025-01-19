@@ -1,9 +1,10 @@
-import { UnifiedPaymentRequest } from 'src/modules/payment/input-model/create-payment.im';
+import { UnifiedPaymentRequest } from 'src/common/models/payment/input-model/create-payment.im';
+import { CreatePaymentViewModel } from 'src/common/models/payment/view-model/create-payment.vm';
 
 export interface PaymentProvider {
-  createPayment(data: UnifiedPaymentRequest): Promise<any>;
+  createPayment(data: UnifiedPaymentRequest): Promise<CreatePaymentViewModel>;
 
-  threedsInitialize?(data: UnifiedPaymentRequest): Promise<any>;
-
-  verifyThreeDSayment?(data: any): Promise<any>;
+  createPaymentWithStoredCard?(
+    data: UnifiedPaymentRequest,
+  ): Promise<CreatePaymentViewModel>;
 }

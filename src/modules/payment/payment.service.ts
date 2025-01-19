@@ -1,37 +1,79 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  UnifiedPaymentRequest,
-  Verify3DSInput,
-} from './input-model/create-payment.im';
-import { InitialThreeDSViewModel } from './view-model/threeDSecure.vm';
+import { UnifiedPaymentRequest } from '../../common/models/payment/input-model/create-payment.im';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { BaseResponse } from 'src/base/response/base.response';
 import { ProviderFactory } from 'src/providers/provider.factory';
+import {
+  CreatePaymentViewModel,
+  ItemTransactionViewModel,
+} from '../../common/models/payment/view-model/create-payment.vm';
+import { DatabaseService } from 'src/common/global-services/database/database.service';
 
 @Injectable()
 export class PaymentService {
-  constructor(private readonly providerFactory: ProviderFactory) {}
+  constructor(
+    private readonly providerFactory: ProviderFactory,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   // ödeme olşturma
 
   async createPayment(
     providerName: string,
     createPayment: UnifiedPaymentRequest,
-  ): Promise<any> {
+  ): Promise<CreatePaymentViewModel> {
     try {
       // provider belirlenir
 
       const provider = this.providerFactory.getPaymentProvider(providerName);
-      console.log('provider: ', provider);
 
-      const result = await provider.createPayment(createPayment);
-      console.log('result: ', result);
+      const result: CreatePaymentViewModel =
+        await provider.createPayment(createPayment);
+
+      await this.databaseService.payments.create({
+        data: {
+          paymentId: result.paymentId,
+          price: Number(result.price),
+          binNumber: result.binNumber,
+          lastFourDigits: result.lastFourDigits,
+          userId: Number(createPayment.buyer.buyerId),
+        },
+      });
+
+      result.itemTransactions.forEach(async (item) => {
+        await this.databaseService.productPayments.create({
+          data: {
+            paymentId: result.paymentId,
+            productId: Number(item.itemId),
+          },
+        });
+      });
 
       return new Promise((resolve, reject) => {
         if (result?.status === 'success') {
-          resolve(result);
+          resolve(
+            new CreatePaymentViewModel({
+              status: result.status,
+              paymentId: result.paymentId,
+              price: result.price,
+              binNumber: result.binNumber,
+              lastFourDigits: result.lastFourDigits,
+              itemTransactions: result.itemTransactions.map((item) => {
+                return new ItemTransactionViewModel({
+                  itemId: item.itemId,
+                  price: item.price,
+                });
+              }),
+            }),
+          );
         } else {
-          reject(new Error('Ödeme oluşturma başarısız.'));
+          reject(
+            new BaseResponse({
+              data: null,
+              message: 'Ödeme Oluşturma Başarısız',
+              success: false,
+            }),
+          );
         }
       });
     } catch (error) {
@@ -46,51 +88,67 @@ export class PaymentService {
     }
   }
 
-  // 3ds tetiklenir
-
-  async threedsInitialize(
+  async createPaymentWithStoredCard(
     providerName: string,
-    initialThreeDSInput: UnifiedPaymentRequest,
-  ): Promise<InitialThreeDSViewModel> {
+    createPayment: UnifiedPaymentRequest,
+  ): Promise<CreatePaymentViewModel> {
     try {
-      const provider = this.providerFactory.getPaymentProvider(providerName);
-      const result = await provider.threedsInitialize(initialThreeDSInput);
+      // provider belirlenir
 
-      if (result.status !== 'success') {
-        throw new BadRequestException(
-          new BaseResponse({
-            data: null,
-            message: ResponseMessages.BAD_REQUEST,
-            success: false,
-          }),
-        );
-      }
-      return result;
-    } catch (error) {
-      console.log('3DS başlatılamadı ', error);
-      throw new BadRequestException(
-        new BaseResponse({
-          data: null,
-          message: ResponseMessages.BAD_REQUEST,
-          success: false,
-        }),
-      );
-    }
-  }
-
-  // 3ds doğrulanır
-
-  async verifyThreeDSayment(
-    providerName: string,
-    paymentToken: Verify3DSInput,
-  ): Promise<any> {
-    try {
       const provider = this.providerFactory.getPaymentProvider(providerName);
 
-      const result = provider.verifyThreeDSayment(paymentToken.paymentId);
-      return result;
+      const result: CreatePaymentViewModel =
+        await provider.createPaymentWithStoredCard(createPayment);
+
+      await this.databaseService.storedCardPayments.create({
+        data: {
+          paymentId: result.paymentId,
+          price: Number(result.price),
+          cardUserKey: createPayment.card.cardUserKey,
+          cardTokenKey: createPayment.card.cardToken,
+          binNumber: result.binNumber,
+          lastFourDigits: result.lastFourDigits,
+        },
+      });
+
+      result.itemTransactions.forEach(async (item) => {
+        await this.databaseService.storedCardProductPayments.create({
+          data: {
+            paymentId: result.paymentId,
+            productId: Number(item.itemId),
+          },
+        });
+      });
+
+      return new Promise((resolve, reject) => {
+        if (result?.status === 'success') {
+          resolve(
+            new CreatePaymentViewModel({
+              status: result.status,
+              paymentId: result.paymentId,
+              price: result.price,
+              binNumber: result.binNumber,
+              lastFourDigits: result.lastFourDigits,
+              itemTransactions: result.itemTransactions.map((item) => {
+                return new ItemTransactionViewModel({
+                  itemId: item.itemId,
+                  price: item.price,
+                });
+              }),
+            }),
+          );
+        } else {
+          reject(
+            new BaseResponse({
+              data: null,
+              message: 'Ödeme Oluşturma Başarısız',
+              success: false,
+            }),
+          );
+        }
+      });
     } catch (error) {
-      console.log('3DS doğrulanamadı ', error);
+      console.log('create payment error:', error);
       throw new BadRequestException(
         new BaseResponse({
           data: null,

@@ -6,6 +6,9 @@ import { GlobalServicesModule } from './common/global-services/global-services.m
 import { IyzicoModule } from './common/global-services/iyzico/iyzico.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProvidersModule } from './providers/providers.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
+import { ProductsModule } from './modules/products/products.module';
+import { ThreedspaymentModule } from './modules/threedspayment/threedspayment.module';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { ProvidersModule } from './providers/providers.module';
     IyzicoModule,
     UsersModule,
     ProvidersModule,
+    AddressesModule,
+    ProductsModule,
+    ThreedspaymentModule,
   ],
   controllers: [],
   providers: [],

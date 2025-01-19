@@ -1,55 +1,45 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../common/global-services/database/database.service';
-import { CardViewModel } from './view-model/card.vm';
-import { CreateUserAndCardViewModel } from './view-model/card-and-user-create.vm';
 import {
-  CardGenerateInput,
-  CardSaveInput,
-  GetCardsInput,
-} from './input-model/card.im';
-import { CardDetailsViewModel } from './view-model/saved-cards.vm';
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { DatabaseService } from '../../common/global-services/database/database.service';
+import { CardGenerateInput, CardSaveInput } from './input-model/card.im';
+import { CardDetails, CardDetailsViewModel } from './view-model/saved-cards.vm';
 import { ProviderFactory } from 'src/providers/provider.factory';
+import { ResponseMessages } from 'src/common/enums/response-messages.enum';
+import { CardProvider } from 'src/providers/interfaces/card-provider.interfaces';
+import { CardViewModel } from './view-model/card.vm';
+import { UserViewModel } from '../users/view-model/user.vm';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class CardsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly providerFactory: ProviderFactory,
+    @Inject(forwardRef(() => UsersService))
+    private readonly userService: UsersService,
   ) {}
-
-  // test kartlarını getirir
-
-  async getAllTestCards(): Promise<CardViewModel[]> {
-    try {
-      const cards: CardViewModel[] =
-        await this.databaseService.testCards.findMany();
-      return cards;
-    } catch (error) {
-      console.log('get all card error ', error);
-      return [];
-    }
-  }
 
   // kartları veritabanına kaydeder
 
-  async saveCard(cardInput: CardSaveInput): Promise<any> {
+  async saveCard(cardInput: CardSaveInput): Promise<CardViewModel> {
     try {
-      console.log('kaydedileck kart body ', cardInput);
-      await this.databaseService.cards.create({
-        data: {
-          cardAlias: cardInput.card.cardAlias,
-          cardNumber: cardInput.card.cardNumber,
-          expireMonth: cardInput.card.expireMonth,
-          expireYear: cardInput.card.expireYear,
-          cardHolderName: cardInput.card.cardHolderName,
-          cardUserKey: cardInput.cardUserKey,
-          cardToken: cardInput.cardTokenKey,
-          cardBankName: cardInput.cardBankName,
-        },
-      });
+      const result: CardViewModel =
+        await this.databaseService.storedCards.create({
+          data: {
+            bankName: cardInput.bankName,
+            cardAlias: cardInput.cardAlias,
+            cardToken: cardInput.cardToken,
+            lastFourDigits: cardInput.lastFourDigits,
+            cardUserKey: cardInput.cardUserKey,
+          },
+        });
+      return result;
     } catch (error) {
-      console.log('generate card error ', error);
-      return [];
+      throw new Error(error);
     }
   }
 
@@ -58,28 +48,29 @@ export class CardsService {
   async generateCard(
     providerName: string,
     cardInput: CardGenerateInput,
-  ): Promise<CreateUserAndCardViewModel> {
+  ): Promise<CardDetails> {
     try {
       const provider = this.providerFactory.getCardProvider(providerName);
-      console.log('GETNERATE ', cardInput);
-      console.log('providers ', provider);
-      const card: CreateUserAndCardViewModel =
-        await provider.generateCard(cardInput);
+      const card: CardDetails = await provider.generateCard(cardInput);
 
-      await this.saveCard(
+      const savedCard = await this.saveCard(
         new CardSaveInput({
-          card: {
-            cardAlias: cardInput.card.cardAlias,
-            cardHolderName: cardInput.card.cardHolderName,
-            cardNumber: cardInput.card.cardNumber,
-            expireMonth: cardInput.card.expireMonth,
-            expireYear: cardInput.card.expireYear,
-          },
-          cardBankName: card.cardBankName,
-          cardTokenKey: card.cardToken,
+          bankName: card.cardBankName,
+          cardAlias: card.cardAlias,
+          cardToken: card.cardToken,
+          lastFourDigits: card.lastFourDigits,
           cardUserKey: cardInput.cardUserKey,
         }),
       );
+
+      const user: UserViewModel = await this.userService.findUserByCardUserKey(
+        cardInput.cardUserKey,
+      );
+
+      await this.databaseService.userStoredCards.create({
+        data: { cardId: savedCard.id, userId: user.id },
+      });
+
       return card;
     } catch (error) {
       console.log('generate card error ', error);
@@ -91,15 +82,42 @@ export class CardsService {
 
   async getUserCards(
     providerName: string,
-    getUserCardsInput: GetCardsInput,
+    userCardKey: string,
   ): Promise<CardDetailsViewModel> {
     try {
-      const provider = this.providerFactory.getCardProvider(providerName);
+      const provider: CardProvider =
+        this.providerFactory.getCardProvider(providerName);
       const result: CardDetailsViewModel =
-        await provider.getUserCards(getUserCardsInput);
+        await provider.getUserCards(userCardKey);
       return result;
     } catch (error) {
       console.log('get user cards error ', error);
+    }
+  }
+
+  async fetchUserCardsLocalStorage(
+    cardUserKey: string,
+  ): Promise<CardDetails[]> {
+    try {
+      const result = await this.databaseService.storedCards.findMany({
+        where: { cardUserKey: cardUserKey },
+      });
+
+      const cardList: CardDetails[] = [];
+      result.forEach((card) => {
+        cardList.push(
+          new CardDetails({
+            cardToken: card.cardToken,
+            cardAlias: card.cardAlias,
+            cardBankName: card.bankName,
+            lastFourDigits: card.lastFourDigits,
+          }),
+        );
+      });
+      return cardList;
+    } catch (err: any) {
+      console.log(err);
+      throw new BadRequestException(ResponseMessages.BAD_REQUEST);
     }
   }
 }

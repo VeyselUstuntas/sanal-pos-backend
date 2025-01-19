@@ -1,29 +1,15 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { CardsService } from './cards.service';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BaseResponse } from 'src/base/response/base.response';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
-import { CardViewModel } from './view-model/card.vm';
-import { CreateUserAndCardViewModel } from './view-model/card-and-user-create.vm';
-import { CardGenerateInput, GetCardsInput } from './input-model/card.im';
-import { CardDetailsViewModel } from './view-model/saved-cards.vm';
+import { CardGenerateInput } from './input-model/card.im';
+import { CardDetails, CardDetailsViewModel } from './view-model/saved-cards.vm';
 
 @ApiTags('Cards')
 @Controller('cards')
 export class CardsController {
   constructor(private readonly cardService: CardsService) {}
-
-  @Get('')
-  @ApiOperation({ summary: 'Get all the test cards' })
-  @ApiResponse({ description: 'Kart Şablonu', type: [CardViewModel] })
-  async getAllTestCards(): Promise<BaseResponse<CardViewModel[]>> {
-    const cards: CardViewModel[] = await this.cardService.getAllTestCards();
-    return new BaseResponse<CardViewModel[]>({
-      data: cards,
-      message: ResponseMessages.SUCCESS,
-      success: true,
-    });
-  }
 
   @Post('card-generate')
   @ApiOperation({ summary: 'Create card for current user' })
@@ -36,17 +22,19 @@ export class CardsController {
   async generateCard(
     @Query('providerName') providerName: string,
     @Body() cardInput: CardGenerateInput,
-  ): Promise<BaseResponse<CreateUserAndCardViewModel>> {
+  ): Promise<BaseResponse<CardDetails>> {
     const card = await this.cardService.generateCard(providerName, cardInput);
-    return new BaseResponse<CreateUserAndCardViewModel>({
+    return new BaseResponse<CardDetails>({
       data: card,
       message: ResponseMessages.SUCCESS,
       success: true,
     });
   }
 
-  @Post('get-user-cards')
-  @ApiOperation({ summary: 'Fetch all cards of current user' })
+  @Get('get-user-cards/:userCardKey')
+  @ApiOperation({
+    summary: 'kullanıcının Iyzico daki bütün kayıtlı kartlarını döndürür ',
+  })
   @ApiQuery({
     name: 'providerName',
     description: 'Provider name',
@@ -55,21 +43,41 @@ export class CardsController {
   })
   async getUserCards(
     @Query('providerName') providerName: string,
-    @Body() userCardsInput: GetCardsInput,
+    @Param('userCardKey') userCardKey: string,
   ): Promise<BaseResponse<CardDetailsViewModel>> {
     const result = await this.cardService.getUserCards(
       providerName,
-      userCardsInput,
+      userCardKey,
     );
     return new BaseResponse<CardDetailsViewModel>({
       data: new CardDetailsViewModel({
-        status: result.status,
-        locale: result.locale,
-        systemTime: result.systemTime,
-        conversationId: result.conversationId,
+        cardDetails: result.cardDetails.map((cardDetail) => {
+          return new CardDetails({
+            cardAlias: cardDetail.cardAlias,
+            cardBankName: cardDetail.cardBankName,
+            cardToken: cardDetail.cardToken,
+            lastFourDigits: cardDetail.lastFourDigits,
+          });
+        }),
         cardUserKey: result.cardUserKey,
-        cardDetails: result.cardDetails,
       }),
+      message: ResponseMessages.SUCCESS,
+      success: true,
+    });
+  }
+
+  @Get('get-current-user-cards/:userCardKey')
+  @ApiOperation({
+    summary:
+      'kullanıcının veritabanındaki daki bütün kayıtlı kartlarını döndürür ',
+  })
+  async fetchUserCardsLocalStorage(
+    @Param('userCardKey') userCardKey: string,
+  ): Promise<BaseResponse<CardDetails[]>> {
+    const result: CardDetails[] =
+      await this.cardService.fetchUserCardsLocalStorage(userCardKey);
+    return new BaseResponse<CardDetails[]>({
+      data: result,
       message: ResponseMessages.SUCCESS,
       success: true,
     });

@@ -1,20 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as Iyzipay from 'iyzipay';
-import { CreateUserAndCardInput } from 'src/modules/cards/input-model/card-and-user-create.im';
-import {
-  CardGenerateInput,
-  GetCardsInput,
-} from 'src/modules/cards/input-model/card.im';
+import { CardGenerateInput } from 'src/modules/cards/input-model/card.im';
 import { BaseResponse } from 'src/base/response/base.response';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { PaymentProvider } from 'src/providers/interfaces/payment-provider.interfaces';
 import { CardProvider } from 'src/providers/interfaces/card-provider.interfaces';
-import { UnifiedPaymentRequest } from 'src/modules/payment/input-model/create-payment.im';
+import { UnifiedPaymentRequest } from 'src/common/models/payment/input-model/create-payment.im';
 import { UserProvider } from 'src/providers/interfaces/user-provider.interfaces';
-
+import {
+  CreatePaymentViewModel,
+  ItemTransactionViewModel,
+} from 'src/common/models/payment/view-model/create-payment.vm';
+import { UserCreateViewModel } from 'src/modules/users/view-model/user.vm';
+import { CreateUserAndCardInput } from 'src/modules/users/input-model/user.im';
+import { Payment3DSProvider } from 'src/providers/interfaces/payment3DS-provider.interface';
+import { InitialThreeDSViewModel } from 'src/common/models/payment/view-model/threeDSecure.vm';
 @Injectable()
 export class IyzicoService
-  implements PaymentProvider, CardProvider, UserProvider
+  implements PaymentProvider, Payment3DSProvider, CardProvider, UserProvider
 {
   private iyzipay: Iyzipay;
 
@@ -28,13 +31,24 @@ export class IyzicoService
 
   // PAYMENT ISLEMLERI
 
-  createPayment(createPayment: UnifiedPaymentRequest): Promise<any> {
+  createPayment(
+    createPayment: UnifiedPaymentRequest,
+  ): Promise<CreatePaymentViewModel> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.payment.create(
           {
-            basketItems: createPayment.basketItems,
-            billingAddress: createPayment.billingAddress,
+            price: createPayment.price,
+            paidPrice: createPayment.paidPrice,
+            installments: createPayment.installmentCount,
+            paymentCard: {
+              cardHolderName: createPayment.card.holderName,
+              cardNumber: createPayment.card.number,
+              cvc: createPayment.card.cvv,
+              expireMonth: createPayment.card.expireMonth.toString(),
+              expireYear: createPayment.card.expireYear.toString(),
+              cardAlias: 'yok',
+            },
             buyer: {
               city: createPayment.buyer.city,
               country: createPayment.buyer.country,
@@ -47,27 +61,32 @@ export class IyzicoService
               surname: createPayment.buyer.surName,
               zipCode: createPayment.buyer.zipCode,
             },
-            currency: createPayment.currency,
-            installments: createPayment.installmentCount,
-            paidPrice: createPayment.paidPrice,
-            paymentCard: {
-              cardHolderName: createPayment.card.holderName,
-              cardNumber: createPayment.card.number,
-              cvc: createPayment.card.cvv,
-              expireMonth: createPayment.card.expireMonth.toString(),
-              expireYear: createPayment.card.expireYear.toString(),
-              cardAlias: 'yok',
-            },
-            price: createPayment.price,
             shippingAddress: createPayment.shippingAddress,
+            billingAddress: createPayment.billingAddress,
+            basketItems: createPayment.basketItems,
+            currency: createPayment.currency,
           },
           (err, result) => {
             if (err) {
               console.log('Hata:', err);
               reject(err);
             } else {
-              console.log('Sonuç:', result);
-              resolve(result);
+              resolve(
+                new CreatePaymentViewModel({
+                  status: result.status,
+                  price: result.price,
+                  paymentId: result.paymentId,
+                  binNumber: result.binNumber,
+                  lastFourDigits: result.lastFourDigits,
+                  itemTransactions: result.itemTransactions.map(
+                    (transaction) =>
+                      new ItemTransactionViewModel({
+                        itemId: transaction.itemId,
+                        price: transaction.price,
+                      }),
+                  ),
+                }),
+              );
             }
           },
         );
@@ -84,28 +103,86 @@ export class IyzicoService
     }
   }
 
-  async threedsInitialize(initialThreeds: UnifiedPaymentRequest): Promise<any> {
+  createPaymentWithStoredCard(
+    createPayment: UnifiedPaymentRequest,
+  ): Promise<CreatePaymentViewModel> {
+    try {
+      return new Promise((resolve, reject) => {
+        this.iyzipay.payment.create(
+          {
+            price: createPayment.price,
+            paidPrice: createPayment.paidPrice,
+            installments: createPayment.installmentCount,
+            paymentCard: {
+              cardUserKey: createPayment.card.cardUserKey,
+              cardToken: createPayment.card.cardToken,
+            },
+            buyer: {
+              city: createPayment.buyer.city,
+              country: createPayment.buyer.country,
+              email: createPayment.buyer.emailAddress,
+              id: createPayment.buyer.buyerId,
+              identityNumber: createPayment.buyer.identityNumber,
+              ip: createPayment.buyer.ipAddress,
+              name: createPayment.buyer.name,
+              registrationAddress: createPayment.buyer.registrationAddress,
+              surname: createPayment.buyer.surName,
+              zipCode: createPayment.buyer.zipCode,
+            },
+            shippingAddress: createPayment.shippingAddress,
+            billingAddress: createPayment.billingAddress,
+            basketItems: createPayment.basketItems,
+            currency: createPayment.currency,
+          },
+          (err, result) => {
+            if (err) {
+              console.log('Hata:', err);
+              reject(err);
+            } else {
+              resolve(
+                new CreatePaymentViewModel({
+                  status: result.status,
+                  price: result.price,
+                  paymentId: result.paymentId,
+                  binNumber: result.binNumber,
+                  lastFourDigits: result.lastFourDigits,
+                  itemTransactions: result.itemTransactions.map(
+                    (transaction) =>
+                      new ItemTransactionViewModel({
+                        itemId: transaction.itemId,
+                        price: transaction.price,
+                      }),
+                  ),
+                }),
+              );
+            }
+          },
+        );
+      });
+    } catch (error) {
+      console.log('Iyzico ödeme oluşturma başarısız:', error);
+      throw new BadRequestException(
+        new BaseResponse({
+          data: null,
+          message: ResponseMessages.BAD_REQUEST,
+          success: false,
+        }),
+      );
+    }
+  }
+
+  // 3DS PAYMENT ISLEMLERI
+
+  async threedsInitialize(
+    initialThreeds: UnifiedPaymentRequest,
+  ): Promise<InitialThreeDSViewModel> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.threedsInitialize.create(
           {
-            basketItems: initialThreeds.basketItems,
-            billingAddress: initialThreeds.billingAddress,
-            buyer: {
-              city: initialThreeds.buyer.city,
-              country: initialThreeds.buyer.country,
-              email: initialThreeds.buyer.emailAddress,
-              id: initialThreeds.buyer.buyerId,
-              identityNumber: initialThreeds.buyer.identityNumber,
-              ip: initialThreeds.buyer.ipAddress,
-              name: initialThreeds.buyer.name,
-              registrationAddress: initialThreeds.buyer.registrationAddress,
-              surname: initialThreeds.buyer.surName,
-              zipCode: initialThreeds.buyer.zipCode,
-            },
-            currency: initialThreeds.currency,
-            installments: initialThreeds.installmentCount,
+            price: initialThreeds.price,
             paidPrice: initialThreeds.paidPrice,
+            installments: initialThreeds.installmentCount,
             paymentCard: {
               cardHolderName: initialThreeds.card.holderName,
               cardNumber: initialThreeds.card.number,
@@ -114,8 +191,21 @@ export class IyzicoService
               expireYear: initialThreeds.card.expireYear.toString(),
               cardAlias: 'yok',
             },
-            price: initialThreeds.price,
+            buyer: {
+              id: initialThreeds.buyer.buyerId,
+              name: initialThreeds.buyer.name,
+              surname: initialThreeds.buyer.surName,
+              identityNumber: initialThreeds.buyer.identityNumber,
+              email: initialThreeds.buyer.emailAddress,
+              registrationAddress: initialThreeds.buyer.registrationAddress,
+              city: initialThreeds.buyer.city,
+              country: initialThreeds.buyer.country,
+              ip: initialThreeds.buyer.ipAddress,
+            },
             shippingAddress: initialThreeds.shippingAddress,
+            billingAddress: initialThreeds.billingAddress,
+            basketItems: initialThreeds.basketItems,
+            currency: initialThreeds.currency,
             callbackUrl: initialThreeds.callbackUrl,
           },
           (err, result) => {
@@ -124,7 +214,11 @@ export class IyzicoService
               reject(err);
             } else {
               console.log('3DS Ödeme Başlatma Sonuç:', result);
-              resolve(result);
+              const data: InitialThreeDSViewModel = new InitialThreeDSViewModel(
+                result,
+              );
+              data.userId = initialThreeds.buyer.buyerId;
+              resolve(data);
             }
           },
         );
@@ -141,7 +235,65 @@ export class IyzicoService
     }
   }
 
-  verifyThreeDSayment(paymentToken: string): Promise<any> {
+  async threedsInitializeWithSavedCard(
+    initialThreeds: UnifiedPaymentRequest,
+  ): Promise<InitialThreeDSViewModel> {
+    try {
+      return new Promise((resolve, reject) => {
+        this.iyzipay.threedsInitialize.create(
+          {
+            price: initialThreeds.price,
+            paidPrice: initialThreeds.paidPrice,
+            installments: initialThreeds.installmentCount,
+            paymentCard: {
+              cardUserKey: initialThreeds.card.cardUserKey,
+              cardToken: initialThreeds.card.cardToken,
+            },
+            buyer: {
+              id: initialThreeds.buyer.buyerId,
+              name: initialThreeds.buyer.name,
+              surname: initialThreeds.buyer.surName,
+              identityNumber: initialThreeds.buyer.identityNumber,
+              email: initialThreeds.buyer.emailAddress,
+              registrationAddress: initialThreeds.buyer.registrationAddress,
+              city: initialThreeds.buyer.city,
+              country: initialThreeds.buyer.country,
+              ip: initialThreeds.buyer.ipAddress,
+            },
+            shippingAddress: initialThreeds.shippingAddress,
+            billingAddress: initialThreeds.billingAddress,
+            basketItems: initialThreeds.basketItems,
+            currency: initialThreeds.currency,
+            callbackUrl: initialThreeds.callbackUrl,
+          },
+          (err, result) => {
+            if (err) {
+              console.log('3DS Ödeme Başlatma Hatası:', err);
+              reject(err);
+            } else {
+              console.log('3DS Ödeme Başlatma Sonuç:', result);
+              const data: InitialThreeDSViewModel = new InitialThreeDSViewModel(
+                result,
+              );
+              data.userId = initialThreeds.buyer.buyerId;
+              resolve(data);
+            }
+          },
+        );
+      });
+    } catch (error) {
+      console.log('3ds error ', error);
+      throw new BadRequestException(
+        new BaseResponse({
+          data: null,
+          message: ResponseMessages.BAD_REQUEST,
+          success: false,
+        }),
+      );
+    }
+  }
+
+  async verifyThreeDSayment(paymentToken: string): Promise<any> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.threedsPayment.create(
@@ -171,7 +323,9 @@ export class IyzicoService
 
   // CARD ISLEMLERI
 
-  async generateCard(cardData: CardGenerateInput): Promise<any> {
+  async generateCard(
+    cardData: CardGenerateInput,
+  ): Promise<UserCreateViewModel> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.card.create(
@@ -192,7 +346,22 @@ export class IyzicoService
               reject(err);
             } else {
               console.log('Sonuç:', result);
-              resolve(result);
+              resolve(
+                new UserCreateViewModel({
+                  binNumber: result.binNumber,
+                  cardAlias: result.cardAlias,
+                  cardAssociation: result.cardAssociation,
+                  cardBankCode: result.cardBankCode,
+                  cardBankName: result.cardBankName,
+                  cardFamily: result.cardFamily,
+                  cardToken: result.cardToken,
+                  cardType: result.cardType,
+                  cardUserKey: result.cardUserKey,
+                  email: result.email,
+                  lastFourDigits: result.lastFourDigits,
+                  status: result.status,
+                }),
+              );
             }
           },
         );
@@ -209,12 +378,12 @@ export class IyzicoService
     }
   }
 
-  async getUserCards(userCardsInput: GetCardsInput): Promise<any> {
+  async getUserCards(cardUserKey: string): Promise<any> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.cardList.retrieve(
           {
-            cardUserKey: userCardsInput.cardUserKey,
+            cardUserKey: cardUserKey,
           },
           (err, result) => {
             if (err) {
@@ -239,17 +408,24 @@ export class IyzicoService
     }
   }
 
-  // USER ISLEMLERI
+  // // USER ISLEMLERI
 
   async createUserAndAddCard(
     createUserAndCard: CreateUserAndCardInput,
-  ): Promise<any> {
+  ): Promise<UserCreateViewModel> {
     try {
       return new Promise((resolve, reject) => {
         this.iyzipay.card.create(
           {
-            email: createUserAndCard.email,
-            card: createUserAndCard.card,
+            email: createUserAndCard.user.email,
+            card: {
+              cardAlias: createUserAndCard.card.cardAlias,
+              cardHolderName: createUserAndCard.card.cardHolderName,
+              cardNumber: createUserAndCard.card.cardNumber,
+              expireMonth: createUserAndCard.card.expireMonth,
+              expireYear: createUserAndCard.card.expireYear,
+              cvc: createUserAndCard.card.cvv,
+            },
           },
           (err, result) => {
             if (err) {
@@ -257,7 +433,22 @@ export class IyzicoService
               reject(err);
             } else {
               console.log('Sonuç:', result);
-              resolve(result);
+              resolve(
+                new UserCreateViewModel({
+                  binNumber: result.binNumber,
+                  cardAlias: result.cardAlias,
+                  cardAssociation: result.cardAssociation,
+                  cardBankCode: result.cardBankCode,
+                  cardBankName: result.cardBankName,
+                  cardFamily: result.cardFamily,
+                  cardToken: result.cardToken,
+                  cardType: result.cardType,
+                  cardUserKey: result.cardUserKey,
+                  email: result.email,
+                  lastFourDigits: result.lastFourDigits,
+                  status: result.status,
+                }),
+              );
             }
           },
         );

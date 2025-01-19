@@ -1,19 +1,19 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BaseResponse } from 'src/base/response/base.response';
 import { UsersService } from './users.service';
-import { UserViewModel } from './view-model/user.vm';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
-import { CreateUserAndCardViewModel } from '../cards/view-model/card-and-user-create.vm';
-import { CreateUserAndCardInput } from '../cards/input-model/card-and-user-create.im';
+import { CreateUserAndCardInput } from './input-model/user.im';
+import { UserCreateViewModel, UserViewModel } from './view-model/user.vm';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
-  @Get('')
+  @Get('get-all-user')
   @ApiOperation({ summary: 'Get All User' })
+  @ApiResponse({ type: [UserViewModel] })
   async getAllUser(): Promise<BaseResponse<UserViewModel[]>> {
     const result: UserViewModel[] = await this.userService.getAllUser();
     const userList: UserViewModel[] = [];
@@ -22,6 +22,10 @@ export class UsersController {
         id: user.id,
         email: user.email,
         cardUserKey: user.cardUserKey,
+        identityNumber: user.identityNumber,
+        name: user.name,
+        surname: user.surname,
+        phoneNumber: user.phoneNumber,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       });
@@ -41,15 +45,16 @@ export class UsersController {
     required: true,
     enum: ['iyzico'],
   })
+  @ApiResponse({ type: UserCreateViewModel })
   async createUserAndCard(
     @Query('providerName') providerName: string,
     @Body() userAndCardData: CreateUserAndCardInput,
-  ): Promise<BaseResponse<CreateUserAndCardViewModel>> {
+  ): Promise<BaseResponse<UserCreateViewModel>> {
     const result = await this.userService.createUserAndAddCard(
       providerName,
       userAndCardData,
     );
-    return new BaseResponse<CreateUserAndCardViewModel>({
+    return new BaseResponse<UserCreateViewModel>({
       data: result,
       message: ResponseMessages.SUCCESS,
       success: true,

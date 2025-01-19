@@ -5,6 +5,7 @@ import { TamiService } from 'src/common/global-services/tami/tami.service';
 import { PaymentProvider } from './interfaces/payment-provider.interfaces';
 import { CardProvider } from './interfaces/card-provider.interfaces';
 import { UserProvider } from './interfaces/user-provider.interfaces';
+import { Payment3DSProvider } from './interfaces/payment3DS-provider.interface';
 
 @Injectable()
 export class ProviderFactory {
@@ -36,6 +37,18 @@ export class ProviderFactory {
       default:
         throw new BadRequestException(
           ResponseMessages.INVALID_PAYMENT_PROVIDER_NAME,
+        );
+    }
+  }
+
+  getPayment3DSProvider(payment3DSProviderName: string): Payment3DSProvider {
+    switch (payment3DSProviderName) {
+      case 'iyzico': {
+        return this.iyzicoService;
+      }
+      default:
+        throw new BadRequestException(
+          ResponseMessages.INVALID_3DS_PAYMENT_PROVIDER_NAME,
         );
     }
   }
