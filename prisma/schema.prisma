@@ -85,7 +85,8 @@ model Product {
 }
 
 model Payments {
-  paymentId      String            @unique @id
+  id             Int               @id @default(autoincrement())
+  paymentId      String            @unique
   price          Float
   user           User              @relation(fields: [userId], references: [id])
   userId         Int
@@ -97,7 +98,8 @@ model Payments {
 }
 
 model StoredCardPayments {
-  paymentId      String                      @unique @id
+  id             Int                         @id @default(autoincrement())
+  paymentId      String                      @unique
   price          Float
   user           User                        @relation(fields: [cardUserKey], references: [cardUserKey])
   cardUserKey    String
@@ -111,19 +113,21 @@ model StoredCardPayments {
 }
 
 model ProductPayments {
-  id        Int      @id @default(autoincrement())
   productId Int
-  paymentId String
+  paymentId Int
   product   Product  @relation(fields: [productId], references: [id])
-  payment   Payments @relation(fields: [paymentId], references: [paymentId])
+  payment   Payments @relation(fields: [paymentId], references: [id])
+
+  @@id([productId, paymentId])
 }
 
 model StoredCardProductPayments {
-  id        Int                @id @default(autoincrement())
   productId Int
-  paymentId String
+  paymentId Int
   product   Product            @relation(fields: [productId], references: [id])
-  payment   StoredCardPayments @relation(fields: [paymentId], references: [paymentId])
+  payment   StoredCardPayments @relation(fields: [paymentId], references: [id])
+
+  @@id([productId, paymentId])
 }
 
 enum AddressType {

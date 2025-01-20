@@ -14,4 +14,6 @@ export interface Payment3DSProvider {
   ): Promise<InitialThreeDSViewModel>;
 
   verifyThreeDSayment?(data: string): Promise<Verify3DSViewModel>;
+
+  verifyThreeDSaymentWithStoredCard?(data: string): Promise<Verify3DSViewModel>;
 }

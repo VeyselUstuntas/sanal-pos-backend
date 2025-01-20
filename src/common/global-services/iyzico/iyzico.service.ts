@@ -321,6 +321,34 @@ export class IyzicoService
     }
   }
 
+  async verifyThreeDSaymentWithStoredCard(paymentToken: string): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        this.iyzipay.threedsPayment.create(
+          { paymentId: paymentToken },
+          (err, result) => {
+            if (err) {
+              console.log('3DS Ödeme Doğrulama Hatası:', err);
+              reject(err);
+            } else {
+              console.log('3DS Ödeme Doğrulama Sonuç:', result);
+              resolve(result);
+            }
+          },
+        );
+      });
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(
+        new BaseResponse({
+          data: null,
+          message: ResponseMessages.BAD_REQUEST,
+          success: false,
+        }),
+      );
+    }
+  }
+
   // CARD ISLEMLERI
 
   async generateCard(

@@ -324,5 +324,11 @@ export class Verify3DSInput {
   paymentId: string;
 
   @ApiProperty()
-  userId: string;
+  userId?: string;
+
+  @ApiProperty()
+  cardUserKey?: string;
+
+  @ApiProperty()
+  cardToken?: string;
 }

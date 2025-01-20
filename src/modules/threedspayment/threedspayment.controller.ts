@@ -43,7 +43,7 @@ export class ThreedspaymentController {
   }
 
   @Post('threeds-initial-payment-with-stored-card')
-  @ApiOperation({ summary: 'threeds Initialize' })
+  @ApiOperation({ summary: 'threeds Initialize with stored card' })
   @ApiQuery({
     name: 'providerName',
     description: 'Provider name',
@@ -84,6 +84,31 @@ export class ThreedspaymentController {
       providerName,
       token,
     );
+    return new BaseResponse<Verify3DSViewModel>({
+      data: result,
+      message: ResponseMessages.SUCCESS,
+      success: true,
+    });
+  }
+
+  @Post('threeds-verify-payment-with-stored-card')
+  @ApiQuery({
+    name: 'providerName',
+    description: 'Provider name',
+    required: true,
+    enum: ['iyzico'],
+  })
+  @ApiOperation({ summary: 'verify 3D Secure payment with stored card' })
+  @ApiResponse({ type: Verify3DSViewModel })
+  async verifyThreeDSaymentWithStoredCard(
+    @Query('providerName') providerName: string,
+    @Body() token: Verify3DSInput,
+  ): Promise<BaseResponse<Verify3DSViewModel>> {
+    const result: any =
+      await this.threeDSPaymentService.verifyThreeDSaymentWithStoredCard(
+        providerName,
+        token,
+      );
     return new BaseResponse<Verify3DSViewModel>({
       data: result,
       message: ResponseMessages.SUCCESS,

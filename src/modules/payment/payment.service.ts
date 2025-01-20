@@ -30,24 +30,26 @@ export class PaymentService {
       const result: CreatePaymentViewModel =
         await provider.createPayment(createPayment);
 
-      await this.databaseService.payments.create({
-        data: {
-          paymentId: result.paymentId,
-          price: Number(result.price),
-          binNumber: result.binNumber,
-          lastFourDigits: result.lastFourDigits,
-          userId: Number(createPayment.buyer.buyerId),
-        },
-      });
-
-      result.itemTransactions.forEach(async (item) => {
-        await this.databaseService.productPayments.create({
+      if (providerName != 'tami') {
+        await this.databaseService.payments.create({
           data: {
             paymentId: result.paymentId,
-            productId: Number(item.itemId),
+            price: Number(result.price),
+            binNumber: result.binNumber,
+            lastFourDigits: result.lastFourDigits,
+            userId: Number(createPayment.buyer.buyerId),
           },
         });
-      });
+
+        result.itemTransactions.forEach(async (item) => {
+          await this.databaseService.productPayments.create({
+            data: {
+              paymentId: result.paymentId,
+              productId: Number(item.itemId),
+            },
+          });
+        });
+      }
 
       return new Promise((resolve, reject) => {
         if (result?.status === 'success') {
