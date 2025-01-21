@@ -7,26 +7,26 @@ import { AddressInput } from './input-model/address.im';
 export class AddressesService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async saveAddress(
-    address: AddressInput,
-    userId: number,
-  ): Promise<AddressViewModel> {
+  async saveAddress(address: AddressInput): Promise<AddressViewModel> {
     try {
       const result: AddressViewModel =
-        await this.databaseService.addresses.create({
+        await this.databaseService.billingAddress.create({
           data: {
             address: address.address,
             city: address.city,
             country: address.country,
             contactName: address.contactName,
-            type: address.type,
+            userId: Number(address.userId),
           },
         });
 
-      await this.databaseService.userAddress.create({
+      await this.databaseService.shippingAddress.create({
         data: {
-          userId: Number(userId),
-          addressId: result.id,
+          address: address.address,
+          city: address.city,
+          country: address.country,
+          contactName: address.contactName,
+          userId: Number(address.userId),
         },
       });
 
@@ -36,24 +36,27 @@ export class AddressesService {
     }
   }
 
-  async getUserAddress(userId: number): Promise<AddressViewModel[]> {
+  async getUserAddress(
+    userId: number,
+  ): Promise<{ billing: AddressViewModel[]; shipping: AddressViewModel[] }> {
     try {
-      const address = await this.databaseService.addresses.findMany({
-        where: {
-          users: { some: { userId: Number(userId) } },
+      const billingAddress = await this.databaseService.billingAddress.findMany(
+        {
+          where: {
+            userId: Number(userId),
+          },
         },
-        include: { users: true },
-      });
-      return address.map((address) => ({
-        id: address.id,
-        address: address.address,
-        contactName: address.contactName,
-        city: address.city,
-        country: address.country,
-        type: address.type,
-        createdAt: address.createdAt,
-        updatedAt: address.updatedAt,
-      }));
+      );
+      const shippingAddress =
+        await this.databaseService.shippingAddress.findMany({
+          where: {
+            userId: Number(userId),
+          },
+        });
+      return {
+        billing: billingAddress,
+        shipping: shippingAddress,
+      };
     } catch (err) {
       throw new Error(err);
     }

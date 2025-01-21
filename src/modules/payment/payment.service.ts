@@ -8,6 +8,7 @@ import {
   ItemTransactionViewModel,
 } from '../../common/models/payment/view-model/create-payment.vm';
 import { DatabaseService } from 'src/common/global-services/database/database.service';
+import { PaymentMethod, PaymentType } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -31,24 +32,43 @@ export class PaymentService {
         await provider.createPayment(createPayment);
 
       if (providerName != 'tami') {
-        await this.databaseService.payments.create({
+        const paymentDirectCard =
+          await this.databaseService.paymentDirectCard.create({
+            data: {
+              binNumber: result.binNumber,
+              lastFourDigits: result.lastFourDigits,
+            },
+          });
+        console.log('paymentDirectCard ', paymentDirectCard);
+        const payment = await this.databaseService.payments.create({
           data: {
             paymentId: result.paymentId,
             price: Number(result.price),
-            binNumber: result.binNumber,
-            lastFourDigits: result.lastFourDigits,
-            userId: Number(createPayment.buyer.buyerId),
+            paymentType: PaymentType.NonThreeDS,
+            paymentMethod: PaymentMethod.DirectCard,
+            user: {
+              connect: { id: Number(createPayment.buyer.buyerId) },
+            },
+            BillingAddress: {
+              connect: { id: createPayment.billingAddressId },
+            },
+            ShippingAddress: {
+              connect: { id: createPayment.shippingAddressId },
+            },
+            PaymentDirectCard: {
+              connect: { id: paymentDirectCard.id },
+            },
           },
         });
 
-        result.itemTransactions.forEach(async (item) => {
-          await this.databaseService.productPayments.create({
+        for (const item of result.itemTransactions) {
+          await this.databaseService.paymentProducts.create({
             data: {
-              paymentId: result.paymentId,
+              paymentId: Number(payment.id),
               productId: Number(item.itemId),
             },
           });
-        });
+        }
       }
 
       return new Promise((resolve, reject) => {
@@ -102,25 +122,43 @@ export class PaymentService {
       const result: CreatePaymentViewModel =
         await provider.createPaymentWithStoredCard(createPayment);
 
-      await this.databaseService.storedCardPayments.create({
+      const paymentStoredCard =
+        await this.databaseService.paymentStoredCard.create({
+          data: {
+            cardTokenKey: createPayment.card.cardToken,
+            cardUserKey: createPayment.card.cardUserKey,
+          },
+        });
+
+      const payment = await this.databaseService.payments.create({
         data: {
           paymentId: result.paymentId,
           price: Number(result.price),
-          cardUserKey: createPayment.card.cardUserKey,
-          cardTokenKey: createPayment.card.cardToken,
-          binNumber: result.binNumber,
-          lastFourDigits: result.lastFourDigits,
+          paymentType: PaymentType.NonThreeDS,
+          paymentMethod: PaymentMethod.StoredCard,
+          user: {
+            connect: { id: Number(createPayment.buyer.buyerId) },
+          },
+          BillingAddress: {
+            connect: { id: createPayment.billingAddressId },
+          },
+          ShippingAddress: {
+            connect: { id: createPayment.shippingAddressId },
+          },
+          PaymentStoredCard: {
+            connect: { id: paymentStoredCard.id },
+          },
         },
       });
 
-      result.itemTransactions.forEach(async (item) => {
-        await this.databaseService.storedCardProductPayments.create({
+      for (const item of result.itemTransactions) {
+        await this.databaseService.paymentProducts.create({
           data: {
-            paymentId: result.paymentId,
+            paymentId: Number(payment.id),
             productId: Number(item.itemId),
           },
         });
-      });
+      }
 
       return new Promise((resolve, reject) => {
         if (result?.status === 'success') {

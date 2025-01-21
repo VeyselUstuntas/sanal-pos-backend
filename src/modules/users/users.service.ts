@@ -80,22 +80,18 @@ export class UsersService {
           cardUserKey: result.cardUserKey,
         }),
       );
-      const savedCard = await this.cardService.saveCard(
+
+      await this.cardService.saveCard(
         new CardSaveInput({
           bankName: result.cardBankName,
           cardAlias: result.cardAlias,
           cardToken: result.cardToken,
           lastFourDigits: result.lastFourDigits,
           cardUserKey: result.cardUserKey,
+          userId: savedUser.id,
         }),
       );
 
-      await this.databaseService.userStoredCards.create({
-        data: {
-          userId: savedUser.id,
-          cardId: savedCard.id,
-        },
-      });
       return result;
     } catch (error) {
       console.log('create user adn card error ', error);

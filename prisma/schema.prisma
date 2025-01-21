@@ -14,123 +14,121 @@ datasource db {
 }
 
 model StoredCards {
-  id                 Int                  @id @default(autoincrement())
-  cardToken          String               @unique
-  cardUserKey        String
-  lastFourDigits     String
-  bankName           String
-  cardAlias          String
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime?            @updatedAt
-  UserStoredCards    UserStoredCards[]
-  StoredCardPayments StoredCardPayments[]
+  id             Int       @id @default(autoincrement())
+  cardToken      String    @unique
+  cardUserKey    String
+  lastFourDigits String
+  bankName       String
+  cardAlias      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id], name: "UserCards")
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  name               String
-  surname            String
-  identityNumber     String               @unique
-  cardUserKey        String               @unique
-  email              String               @unique
-  phoneNumber        String               @unique
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime?            @updatedAt
-  address            UserAddress[]
-  UserStoredCards    UserStoredCards[]
-  Payments           Payments[]
-  StoredCardPayments StoredCardPayments[]
+  id              Int               @id @default(autoincrement())
+  name            String
+  surname         String
+  identityNumber  String            @unique
+  cardUserKey     String            @unique
+  email           String            @unique
+  phoneNumber     String            @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?         @updatedAt
+  storedCards     StoredCards[]     @relation(name: "UserCards")
+  billingAddress  BillingAddress[]  @relation(name: "UserBillingAddress")
+  shippingAddress ShippingAddress[] @relation(name: "UserShippingAddress")
+  payments        Payments[]        @relation(name: "UserPayments")
 }
 
-model UserStoredCards {
-  userId Int
-  cardId Int
-  user   User        @relation(fields: [userId], references: [id])
-  card   StoredCards @relation(fields: [cardId], references: [id])
-
-  @@id([userId, cardId])
-}
-
-model Addresses {
-  id          Int           @id @default(autoincrement())
-  type        AddressType
+model BillingAddress {
+  id          Int        @id @default(autoincrement())
   address     String
   contactName String
   city        String
   country     String
-  users       UserAddress[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime?     @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime?  @updatedAt
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id], name: "UserBillingAddress")
+  payments    Payments[] @relation(name: "PaymentBillingAddress")
 }
 
-model UserAddress {
-  userId    Int
-  addressId Int
-  user      User      @relation(fields: [userId], references: [id])
-  address   Addresses @relation(fields: [addressId], references: [id])
-
-  @@id([userId, addressId])
+model ShippingAddress {
+  id          Int        @id @default(autoincrement())
+  address     String
+  contactName String
+  city        String
+  country     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime?  @updatedAt
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id], name: "UserShippingAddress")
+  payments    Payments[] @relation(name: "PaymentShippingAddress")
 }
 
 model Product {
-  id                        Int                         @id @default(autoincrement())
-  price                     Float
-  name                      String
-  category1                 String
-  itemType                  String
-  createdAt                 DateTime                    @default(now())
-  updatedAt                 DateTime?                   @updatedAt
-  Payments                  ProductPayments[]
-  StoredCardProductPayments StoredCardProductPayments[]
+  id              Int               @id @default(autoincrement())
+  price           Float
+  name            String
+  category1       String
+  itemType        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?         @updatedAt
+  PaymentProducts PaymentProducts[] @relation(name: "PaymentProducts")
 }
 
 model Payments {
-  id             Int               @id @default(autoincrement())
-  paymentId      String            @unique
-  price          Float
-  user           User              @relation(fields: [userId], references: [id])
-  userId         Int
-  binNumber      String
-  lastFourDigits String
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime?         @updatedAt
-  productId      ProductPayments[]
+  id                  Int                @id @default(autoincrement())
+  paymentId           String             @unique
+  price               Float
+  paymentType         PaymentType
+  paymentMethod       PaymentMethod
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime?          @updatedAt
+  userId              Int
+  user                User               @relation(fields: [userId], references: [id], name: "UserPayments")
+  billingAddressId    Int
+  BillingAddress      BillingAddress     @relation(fields: [billingAddressId], references: [id], name: "PaymentBillingAddress")
+  shippingAddressId   Int
+  ShippingAddress     ShippingAddress    @relation(fields: [shippingAddressId], references: [id], name: "PaymentShippingAddress")
+  PaymentProducts     PaymentProducts[]  @relation(name: "PaymentProducts")
+  paymentDirectCardId Int?
+  PaymentDirectCard   PaymentDirectCard? @relation(fields: [paymentDirectCardId], references: [id], name: "PaymentDirectCardMethod")
+  paymentStoredCardId Int?
+  PaymentStoredCard   PaymentStoredCard? @relation(fields: [paymentStoredCardId], references: [id], name: "PaymentStoredCardMethod")
 }
 
-model StoredCardPayments {
-  id             Int                         @id @default(autoincrement())
-  paymentId      String                      @unique
-  price          Float
-  user           User                        @relation(fields: [cardUserKey], references: [cardUserKey])
-  cardUserKey    String
-  card           StoredCards                 @relation(fields: [cardTokenKey], references: [cardToken])
-  cardTokenKey   String
-  binNumber      String
-  lastFourDigits String
-  createdAt      DateTime                    @default(now())
-  updatedAt      DateTime?                   @updatedAt
-  productId      StoredCardProductPayments[]
-}
-
-model ProductPayments {
+model PaymentProducts {
   productId Int
+  Product   Product  @relation(fields: [productId], references: [id], name: "PaymentProducts")
   paymentId Int
-  product   Product  @relation(fields: [productId], references: [id])
-  payment   Payments @relation(fields: [paymentId], references: [id])
+  Payments  Payments @relation(fields: [paymentId], references: [id], name: "PaymentProducts")
 
   @@id([productId, paymentId])
 }
 
-model StoredCardProductPayments {
-  productId Int
-  paymentId Int
-  product   Product            @relation(fields: [productId], references: [id])
-  payment   StoredCardPayments @relation(fields: [paymentId], references: [id])
-
-  @@id([productId, paymentId])
+model PaymentDirectCard {
+  id             Int        @id @default(autoincrement())
+  binNumber      String
+  lastFourDigits String
+  payments       Payments[] @relation(name: "PaymentDirectCardMethod")
 }
 
-enum AddressType {
-  shipping
-  billing
+model PaymentStoredCard {
+  id           Int        @id @default(autoincrement())
+  cardUserKey  String
+  cardTokenKey String
+  payments     Payments[] @relation(name: "PaymentStoredCardMethod")
+}
+
+enum PaymentType {
+  ThreeDS
+  NonThreeDS
+}
+
+enum PaymentMethod {
+  StoredCard
+  DirectCard
 }

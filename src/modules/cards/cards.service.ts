@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/global-services/database/database.service';
 import { CardGenerateInput, CardSaveInput } from './input-model/card.im';
 import { CardDetails, CardDetailsViewModel } from './view-model/saved-cards.vm';
@@ -11,16 +6,12 @@ import { ProviderFactory } from 'src/providers/provider.factory';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { CardProvider } from 'src/providers/interfaces/card-provider.interfaces';
 import { CardViewModel } from './view-model/card.vm';
-import { UserViewModel } from '../users/view-model/user.vm';
-import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class CardsService {
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly providerFactory: ProviderFactory,
-    @Inject(forwardRef(() => UsersService))
-    private readonly userService: UsersService,
   ) {}
 
   // kartları veritabanına kaydeder
@@ -35,6 +26,7 @@ export class CardsService {
             cardToken: cardInput.cardToken,
             lastFourDigits: cardInput.lastFourDigits,
             cardUserKey: cardInput.cardUserKey,
+            userId: cardInput.userId,
           },
         });
       return result;
@@ -53,23 +45,16 @@ export class CardsService {
       const provider = this.providerFactory.getCardProvider(providerName);
       const card: CardDetails = await provider.generateCard(cardInput);
 
-      const savedCard = await this.saveCard(
+      await this.saveCard(
         new CardSaveInput({
           bankName: card.cardBankName,
           cardAlias: card.cardAlias,
           cardToken: card.cardToken,
           lastFourDigits: card.lastFourDigits,
           cardUserKey: cardInput.cardUserKey,
+          userId: cardInput.userId,
         }),
       );
-
-      const user: UserViewModel = await this.userService.findUserByCardUserKey(
-        cardInput.cardUserKey,
-      );
-
-      await this.databaseService.userStoredCards.create({
-        data: { cardId: savedCard.id, userId: user.id },
-      });
 
       return card;
     } catch (error) {

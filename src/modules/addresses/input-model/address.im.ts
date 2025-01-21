@@ -1,12 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AddressType } from '@prisma/client';
 
 export class AddressInput {
-  @ApiProperty({
-    enum: ['billing', 'shipping'],
-    enumName: 'AddressType',
-  })
-  type: AddressType;
+  @ApiProperty()
+  userId: number;
 
   @ApiProperty()
   address: string;

@@ -165,65 +165,65 @@ class BasketItem {
   itemType: BasketItemType;
 }
 
-class ShippingAddress {
-  @ApiProperty({
-    example: '123 Shipping Street',
-    description: 'Shipping address',
-    required: true,
-  })
-  address: string;
+// class ShippingAddress {
+//   @ApiProperty({
+//     example: '123 Shipping Street',
+//     description: 'Shipping address',
+//     required: true,
+//   })
+//   address: string;
 
-  @ApiProperty({
-    example: 'John Doe',
-    description: 'Contact name for the shipping address',
-    required: true,
-  })
-  contactName: string;
+//   @ApiProperty({
+//     example: 'John Doe',
+//     description: 'Contact name for the shipping address',
+//     required: true,
+//   })
+//   contactName: string;
 
-  @ApiProperty({
-    example: 'New York',
-    description: 'City for the shipping address',
-    required: true,
-  })
-  city: string;
+//   @ApiProperty({
+//     example: 'New York',
+//     description: 'City for the shipping address',
+//     required: true,
+//   })
+//   city: string;
 
-  @ApiProperty({
-    example: 'USA',
-    description: 'Country for the shipping address',
-    required: true,
-  })
-  country: string;
-}
+//   @ApiProperty({
+//     example: 'USA',
+//     description: 'Country for the shipping address',
+//     required: true,
+//   })
+//   country: string;
+// }
 
-class BillingAddress {
-  @ApiProperty({
-    example: '123 Billing Street',
-    description: 'Billing address',
-    required: true,
-  })
-  address: string;
+// class BillingAddress {
+//   @ApiProperty({
+//     example: '123 Billing Street',
+//     description: 'Billing address',
+//     required: true,
+//   })
+//   address: string;
 
-  @ApiProperty({
-    example: 'John Doe',
-    description: 'Contact name for the billing address',
-    required: true,
-  })
-  contactName: string;
+//   @ApiProperty({
+//     example: 'John Doe',
+//     description: 'Contact name for the billing address',
+//     required: true,
+//   })
+//   contactName: string;
 
-  @ApiProperty({
-    example: 'New York',
-    description: 'City for the billing address',
-    required: true,
-  })
-  city: string;
+//   @ApiProperty({
+//     example: 'New York',
+//     description: 'City for the billing address',
+//     required: true,
+//   })
+//   city: string;
 
-  @ApiProperty({
-    example: 'USA',
-    description: 'Country for the billing address',
-    required: true,
-  })
-  country: string;
-}
+//   @ApiProperty({
+//     example: 'USA',
+//     description: 'Country for the billing address',
+//     required: true,
+//   })
+//   country: string;
+// }
 
 export type Currency =
   | 'TRY'
@@ -294,19 +294,25 @@ export class UnifiedPaymentRequest {
   })
   basketItems: BasketItem[];
 
-  @ApiProperty({
-    type: ShippingAddress,
-    description: 'Shipping address details',
-    required: true,
-  })
-  shippingAddress: ShippingAddress;
+  // @ApiProperty({
+  //   type: ShippingAddress,
+  //   description: 'Shipping address details',
+  //   required: true,
+  // })
+  // shippingAddress: ShippingAddress;
 
-  @ApiProperty({
-    type: BillingAddress,
-    description: 'Billing address details',
-    required: true,
-  })
-  billingAddress: BillingAddress;
+  // @ApiProperty({
+  //   type: BillingAddress,
+  //   description: 'Billing address details',
+  //   required: true,
+  // })
+  // billingAddress: BillingAddress;
+
+  @ApiProperty()
+  billingAddressId: number;
+
+  @ApiProperty()
+  shippingAddressId: number;
 
   @ApiProperty({ example: 'PRODUCT', description: 'Tami payment group' })
   paymentGroup: string;
@@ -327,8 +333,28 @@ export class Verify3DSInput {
   userId?: string;
 
   @ApiProperty()
+  shippingAddressId: number;
+
+  @ApiProperty()
+  billingAddressId: number;
+}
+
+export class Verify3DSStoredCardInput {
+  @ApiProperty()
+  paymentId: string;
+
+  @ApiProperty()
+  userId?: string;
+
+  @ApiProperty()
   cardUserKey?: string;
 
   @ApiProperty()
   cardToken?: string;
+
+  @ApiProperty()
+  shippingAddressId: number;
+
+  @ApiProperty()
+  billingAddressId: number;
 }

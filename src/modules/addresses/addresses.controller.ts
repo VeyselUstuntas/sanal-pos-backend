@@ -11,13 +11,12 @@ import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 export class AddressesController {
   constructor(private readonly addressService: AddressesService) {}
 
-  @Post('save-address/:userId')
+  @Post('save-address')
   @ApiOperation({ summary: 'Save Address' })
   async saveAddress(
-    @Param('userId') userId: number,
     @Body() addressInput: AddressInput,
   ): Promise<BaseResponse<AddressViewModel>> {
-    const address = await this.addressService.saveAddress(addressInput, userId);
+    const address = await this.addressService.saveAddress(addressInput);
     return new BaseResponse<AddressViewModel>({
       data: address,
       message: ResponseMessages.SUCCESS,
@@ -27,11 +26,17 @@ export class AddressesController {
 
   @Get('get-user-addresses/:userId')
   @ApiOperation({ summary: 'Get User Address' })
-  async getUserAddress(
-    @Param('userId') userId: number,
-  ): Promise<BaseResponse<AddressViewModel[]>> {
+  async getUserAddress(@Param('userId') userId: number): Promise<
+    BaseResponse<{
+      billing: AddressViewModel[];
+      shipping: AddressViewModel[];
+    }>
+  > {
     const addresses = await this.addressService.getUserAddress(userId);
-    return new BaseResponse<AddressViewModel[]>({
+    return new BaseResponse<{
+      billing: AddressViewModel[];
+      shipping: AddressViewModel[];
+    }>({
       data: addresses,
       message: ResponseMessages.SUCCESS,
       success: true,

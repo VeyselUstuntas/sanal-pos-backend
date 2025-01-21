@@ -15,13 +15,15 @@ import { UserCreateViewModel } from 'src/modules/users/view-model/user.vm';
 import { CreateUserAndCardInput } from 'src/modules/users/input-model/user.im';
 import { Payment3DSProvider } from 'src/providers/interfaces/payment3DS-provider.interface';
 import { InitialThreeDSViewModel } from 'src/common/models/payment/view-model/threeDSecure.vm';
+import { DatabaseService } from '../database/database.service';
+import { BillingAddress, ShippingAddress } from '@prisma/client';
 @Injectable()
 export class IyzicoService
   implements PaymentProvider, Payment3DSProvider, CardProvider, UserProvider
 {
   private iyzipay: Iyzipay;
 
-  constructor() {
+  constructor(private readonly databaseService: DatabaseService) {
     this.iyzipay = new Iyzipay({
       apiKey: process.env.IYZICO_API_KEY,
       secretKey: process.env.IYZICO_SEC_KEY,
@@ -29,12 +31,37 @@ export class IyzicoService
     });
   }
 
+  async getAddresses(
+    bId: number,
+    sId: number,
+  ): Promise<{
+    shipping: ShippingAddress | null;
+    billing: BillingAddress | null;
+  }> {
+    try {
+      const shipping = await this.databaseService.shippingAddress.findUnique({
+        where: { id: sId },
+      });
+
+      const billing = await this.databaseService.billingAddress.findUnique({
+        where: { id: sId },
+      });
+      return { shipping: shipping, billing: billing };
+    } catch (err) {
+      throw new Error('adresler çekilemedi ' + err);
+    }
+  }
+
   // PAYMENT ISLEMLERI
 
-  createPayment(
+  async createPayment(
     createPayment: UnifiedPaymentRequest,
   ): Promise<CreatePaymentViewModel> {
     try {
+      const addresses = await this.getAddresses(
+        createPayment.billingAddressId,
+        createPayment.shippingAddressId,
+      );
       return new Promise((resolve, reject) => {
         this.iyzipay.payment.create(
           {
@@ -61,8 +88,8 @@ export class IyzicoService
               surname: createPayment.buyer.surName,
               zipCode: createPayment.buyer.zipCode,
             },
-            shippingAddress: createPayment.shippingAddress,
-            billingAddress: createPayment.billingAddress,
+            shippingAddress: addresses.shipping,
+            billingAddress: addresses.billing,
             basketItems: createPayment.basketItems,
             currency: createPayment.currency,
           },
@@ -103,10 +130,14 @@ export class IyzicoService
     }
   }
 
-  createPaymentWithStoredCard(
+  async createPaymentWithStoredCard(
     createPayment: UnifiedPaymentRequest,
   ): Promise<CreatePaymentViewModel> {
     try {
+      const addresses = await this.getAddresses(
+        createPayment.billingAddressId,
+        createPayment.shippingAddressId,
+      );
       return new Promise((resolve, reject) => {
         this.iyzipay.payment.create(
           {
@@ -129,8 +160,8 @@ export class IyzicoService
               surname: createPayment.buyer.surName,
               zipCode: createPayment.buyer.zipCode,
             },
-            shippingAddress: createPayment.shippingAddress,
-            billingAddress: createPayment.billingAddress,
+            shippingAddress: addresses.shipping,
+            billingAddress: addresses.billing,
             basketItems: createPayment.basketItems,
             currency: createPayment.currency,
           },
@@ -177,6 +208,10 @@ export class IyzicoService
     initialThreeds: UnifiedPaymentRequest,
   ): Promise<InitialThreeDSViewModel> {
     try {
+      const addresses = await this.getAddresses(
+        initialThreeds.billingAddressId,
+        initialThreeds.shippingAddressId,
+      );
       return new Promise((resolve, reject) => {
         this.iyzipay.threedsInitialize.create(
           {
@@ -202,8 +237,8 @@ export class IyzicoService
               country: initialThreeds.buyer.country,
               ip: initialThreeds.buyer.ipAddress,
             },
-            shippingAddress: initialThreeds.shippingAddress,
-            billingAddress: initialThreeds.billingAddress,
+            shippingAddress: addresses.shipping,
+            billingAddress: addresses.billing,
             basketItems: initialThreeds.basketItems,
             currency: initialThreeds.currency,
             callbackUrl: initialThreeds.callbackUrl,
@@ -239,6 +274,10 @@ export class IyzicoService
     initialThreeds: UnifiedPaymentRequest,
   ): Promise<InitialThreeDSViewModel> {
     try {
+      const addresses = await this.getAddresses(
+        initialThreeds.billingAddressId,
+        initialThreeds.shippingAddressId,
+      );
       return new Promise((resolve, reject) => {
         this.iyzipay.threedsInitialize.create(
           {
@@ -260,8 +299,8 @@ export class IyzicoService
               country: initialThreeds.buyer.country,
               ip: initialThreeds.buyer.ipAddress,
             },
-            shippingAddress: initialThreeds.shippingAddress,
-            billingAddress: initialThreeds.billingAddress,
+            shippingAddress: addresses.shipping,
+            billingAddress: addresses.billing,
             basketItems: initialThreeds.basketItems,
             currency: initialThreeds.currency,
             callbackUrl: initialThreeds.callbackUrl,

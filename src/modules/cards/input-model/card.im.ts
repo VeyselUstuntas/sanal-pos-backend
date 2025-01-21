@@ -25,6 +25,9 @@ export class CardInput {
 }
 
 export class CardGenerateInput {
+  @ApiProperty()
+  userId: number;
+
   @ApiProperty({
     example: 'd801e6a2-8fe5-a5de-6ad5-a923ff225e4e',
     required: true,
@@ -58,6 +61,9 @@ export class CardSaveInput {
 
   @ApiProperty()
   cardUserKey: string;
+
+  @ApiProperty()
+  userId: number;
 
   constructor(partial: Partial<CardSaveInput>) {
     Object.assign(this, partial);

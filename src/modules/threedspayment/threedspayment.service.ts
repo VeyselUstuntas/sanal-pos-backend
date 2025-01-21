@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { PaymentMethod, PaymentType } from '@prisma/client';
 import { BaseResponse } from 'src/base/response/base.response';
 import { ResponseMessages } from 'src/common/enums/response-messages.enum';
 import { DatabaseService } from 'src/common/global-services/database/database.service';
 import {
   UnifiedPaymentRequest,
   Verify3DSInput,
+  Verify3DSStoredCardInput,
 } from 'src/common/models/payment/input-model/create-payment.im';
 import {
   InitialThreeDSViewModel,
@@ -94,25 +96,44 @@ export class ThreedspaymentService {
         verifyInput.paymentId,
       );
 
-      await this.databaseService.payments.create({
+      const paymentDirectCard =
+        await this.databaseService.paymentDirectCard.create({
+          data: {
+            binNumber: result.binNumber,
+            lastFourDigits: result.lastFourDigits,
+          },
+        });
+
+      const payment = await this.databaseService.payments.create({
         data: {
           paymentId: result.paymentId,
           price: Number(result.price),
-          binNumber: result.binNumber,
-          lastFourDigits: result.lastFourDigits,
-          userId: Number(verifyInput.userId),
+          paymentType: PaymentType.ThreeDS,
+          paymentMethod: PaymentMethod.DirectCard,
+          user: {
+            connect: { id: Number(verifyInput.userId) },
+          },
+          BillingAddress: {
+            connect: { id: verifyInput.billingAddressId },
+          },
+          ShippingAddress: {
+            connect: { id: verifyInput.shippingAddressId },
+          },
+          PaymentDirectCard: {
+            connect: { id: paymentDirectCard.id },
+          },
         },
       });
 
       if (result.itemTransactions.length > 0) {
-        result.itemTransactions.forEach(async (item) => {
-          await this.databaseService.productPayments.create({
+        for (const item of result.itemTransactions) {
+          await this.databaseService.paymentProducts.create({
             data: {
-              paymentId: result.paymentId,
+              paymentId: Number(payment.id),
               productId: Number(item.itemId),
             },
           });
-        });
+        }
       }
 
       return new Promise((resolve, reject) => {
@@ -151,36 +172,52 @@ export class ThreedspaymentService {
 
   async verifyThreeDSaymentWithStoredCard(
     providerName: string,
-    verifyInput: Verify3DSInput,
+    verifyInput: Verify3DSStoredCardInput,
   ): Promise<Verify3DSViewModel> {
     try {
       const provider = this.providerFactory.getPayment3DSProvider(providerName);
 
       const result: Verify3DSViewModel =
         await provider.verifyThreeDSaymentWithStoredCard(verifyInput.paymentId);
-      console.log('usr ', verifyInput.userId);
-      console.log('usr2 ', result);
 
-      await this.databaseService.storedCardPayments.create({
+      const paymentStoredCard =
+        await this.databaseService.paymentStoredCard.create({
+          data: {
+            cardTokenKey: verifyInput.cardToken,
+            cardUserKey: verifyInput.cardUserKey,
+          },
+        });
+
+      const payment = await this.databaseService.payments.create({
         data: {
           paymentId: result.paymentId,
           price: Number(result.price),
-          binNumber: result.binNumber,
-          lastFourDigits: result.lastFourDigits,
-          cardUserKey: verifyInput.cardUserKey,
-          cardTokenKey: verifyInput.cardToken,
+          paymentType: PaymentType.ThreeDS,
+          paymentMethod: PaymentMethod.StoredCard,
+          user: {
+            connect: { id: Number(verifyInput.userId) },
+          },
+          BillingAddress: {
+            connect: { id: verifyInput.billingAddressId },
+          },
+          ShippingAddress: {
+            connect: { id: verifyInput.shippingAddressId },
+          },
+          PaymentStoredCard: {
+            connect: { id: paymentStoredCard.id },
+          },
         },
       });
 
       if (result.itemTransactions.length > 0) {
-        result.itemTransactions.forEach(async (item) => {
-          await this.databaseService.storedCardProductPayments.create({
+        for (const item of result.itemTransactions) {
+          await this.databaseService.paymentProducts.create({
             data: {
-              paymentId: result.paymentId,
+              paymentId: Number(payment.id),
               productId: Number(item.itemId),
             },
           });
-        });
+        }
       }
 
       return new Promise((resolve, reject) => {

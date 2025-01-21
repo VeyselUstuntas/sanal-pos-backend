@@ -1,18 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AddressType } from '@prisma/client';
 import { Expose } from 'class-transformer';
 
 export class AddressViewModel {
   @ApiProperty()
   @Expose()
   id: number;
-
-  @ApiProperty({
-    enum: ['billing', 'shipping'],
-    enumName: 'AddressType',
-  })
-  @Expose()
-  type: AddressType;
 
   @ApiProperty()
   @Expose()
